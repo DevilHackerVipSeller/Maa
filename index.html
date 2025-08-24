@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="The Spy Predictor User Login Panel">
+  <meta name="robots" content="noindex, nofollow">
   <title>𝐓𝐇𝐄 𝐒𝐏𝐘 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑 - User Panel</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap');
@@ -17,6 +19,7 @@
       background: #0a0a0f;
       color: #00f7ff;
       overflow-x: hidden;
+      min-height: 100vh;
     }
     #matrixCanvas {
       position: fixed;
@@ -141,7 +144,7 @@
   <h1>𝐓𝐇𝐄 𝐒𝐏𝐘 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑</h1>
   <div class="loading" id="loading">VERIFYING...</div>
   <div class="login-box" id="loginBox">
-    <input type="text" id="accessKey" placeholder="ENTER ACCESS KEY">
+    <input type="text" id="accessKey" placeholder="ENTER ACCESS KEY" aria-label="Access Key">
     <button onclick="handleLogin()">LOGIN</button>
     <button class="secondary" onclick="getKey()">GET KEY</button>
     <div class="loading" id="manualLoading" style="display:none;">VERIFYING...</div>
@@ -303,4 +306,4 @@
   });
 </script>
 </body>
-</html>
+  </html>
