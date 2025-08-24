@@ -154,6 +154,7 @@
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
+  // Generate a persistent device ID
   function getDeviceId() {
     let id = localStorage.getItem("device_id");
     if (!id) {
@@ -172,6 +173,8 @@
       }
 
       const data = snap.val();
+      
+      // Check if key is already bound to a different device
       if (data.deviceId && data.deviceId !== deviceId) {
         return { success: false, error: "THIS KEY IS ALREADY USED ON ANOTHER DEVICE." };
       }
@@ -186,7 +189,7 @@
     }
   }
 
-  // Auto-verify function
+  // Enhanced auto-verify function
   async function tryAutoLogin() {
     const storedKey = localStorage.getItem("access_key");
     const deviceId = getDeviceId();
@@ -202,6 +205,7 @@
 
     const result = await validateKey(storedKey, deviceId);
     if (result.success) {
+      // If key is valid but not bound to this device, bind it
       if (!result.data.deviceId) {
         try {
           await update(ref(db, `accessKeys/${storedKey}`), { deviceId });
@@ -209,9 +213,12 @@
           console.error("Failed to bind deviceId:", err);
         }
       }
+      
+      // Redirect to the main application
       window.location.href = "https://devilhackervipseller.github.io/Testing/";
     } else {
-      localStorage.removeItem("access_key"); // Clear invalid key
+      // Clear invalid key from storage
+      localStorage.removeItem("access_key");
       loadingDiv.style.display = "none";
       loginBox.classList.add("show");
       errorDiv.innerText = result.error;
@@ -239,10 +246,15 @@
     manualLoadingDiv.style.display = "none";
 
     if (result.success) {
+      // Bind key to device if not already bound
       if (!result.data.deviceId) {
         await update(ref(db, `accessKeys/${key}`), { deviceId });
       }
+      
+      // Store the key for future auto-login
       localStorage.setItem("access_key", key);
+      
+      // Redirect to the main application
       window.location.href = "https://devilhackervipseller.github.io/Testing/";
     } else {
       errorDiv.innerText = result.error;
@@ -331,4 +343,4 @@
   type();
 </script>
 </body>
-  </html>
+</html>
