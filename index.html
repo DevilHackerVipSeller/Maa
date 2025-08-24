@@ -105,12 +105,75 @@
       font-size: 14px;
       margin-top: 10px;
     }
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal-content {
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid #0ff;
+      box-shadow: 0 0 20px #0ff, 0 0 40px #0ff;
+      padding: 2rem;
+      border-radius: 12px;
+      max-width: 90%;
+      width: 350px;
+      text-align: center;
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+    .modal-overlay.active .modal-content {
+      transform: scale(1);
+    }
+    .modal-content h3 {
+      font-size: 20px;
+      text-shadow: 0 0 10px #0ff;
+      margin-bottom: 1rem;
+    }
+    .modal-content p {
+      font-size: 14px;
+      color: #0ff;
+      margin-bottom: 1.5rem;
+    }
+    .modal-content button {
+      padding: 10px 20px;
+      font-size: 14px;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .attempts-warning {
+      color: orange;
+      font-size: 12px;
+      margin-top: 5px;
+      display: none;
+    }
     @media (max-width: 500px) {
       h1 {
         font-size: 24px;
       }
       .small-title {
         font-size: 14px;
+      }
+      .modal-content {
+        width: 90%;
+        padding: 1.5rem;
       }
     }
   </style>
@@ -122,18 +185,32 @@
   <div class="small-title" id="typingTitle"></div>
   <div class="login-box">
     <h1>LOGIN</h1>
-    <input type="text" id="accessKey" placeholder="ENTER ACCESS KEY" />
+    <input type="text" id="accessKey" placeholder="ENTER ACCESS KEY" onkeypress="handleKeyPress(event)" />
     <button onclick="handleLogin()">LOGIN</button>
     <button class="secondary" onclick="getKey()">GET KEY</button>
     <div class="loading" id="loading" style="display:none;">VERIFYING...</div>
     <div class="error" id="error"></div>
+    <div class="attempts-warning" id="attemptsWarning">Too many attempts. Try again in <span id="countdown">30</span> seconds.</div>
+  </div>
+</div>
+
+<!-- Modal for messages -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-content">
+    <h3 id="modalTitle">Title</h3>
+    <p id="modalMessage">Message</p>
+    <div class="modal-buttons">
+      <button id="modalConfirmBtn">OK</button>
+      <button class="secondary" id="modalCloseBtn" style="display:none;">Close</button>
+    </div>
   </div>
 </div>
 
 <!-- Firebase Script -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-  import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+  import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyB8vPX5DJ0JL5OpAF2TipkFCEiCUJaWsO4",
@@ -148,14 +225,89 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
+  const auth = getAuth(app);
+
+  // Sign in anonymously
+  signInAnonymously(auth).then(() => {
+    console.log("Signed in anonymously to Firebase.");
+  }).catch((error) => {
+    console.error("Anonymous sign-in failed:", error);
+    showModal('Auth Error', `Failed to sign in anonymously: ${error.message}.`);
+  });
+
+  // Modal functions
+  function showModal(title, message, showCloseBtn = false) {
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+    const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    
+    modalTitle.textContent = title;
+    modalMessage.textContent = message;
+    modalCloseBtn.style.display = showCloseBtn ? 'block' : 'none';
+    
+    modal.classList.add('active');
+    
+    modalConfirmBtn.onclick = function() {
+      modal.classList.remove('active');
+    };
+    
+    modalCloseBtn.onclick = function() {
+      modal.classList.remove('active');
+    };
+  }
+
+  // Login attempts tracking
+  let loginAttempts = parseInt(localStorage.getItem('loginAttempts') || '0');
+  let lastAttemptTime = parseInt(localStorage.getItem('lastAttemptTime') || '0');
+  let isLoggingIn = false; // Debounce flag
+  const maxAttempts = 5;
+  const lockoutTime = 30000; // 30 seconds in milliseconds
 
   function getDeviceId() {
     let id = localStorage.getItem("device_id");
     if (!id) {
-      id = 'dev_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+      id = crypto.randomUUID();
       localStorage.setItem("device_id", id);
     }
     return id;
+  }
+
+  function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+      handleLogin();
+    }
+  }
+
+  function checkIfLockedOut() {
+    const now = Date.now();
+    if (loginAttempts >= maxAttempts && (now - lastAttemptTime) < lockoutTime) {
+      const remainingTime = Math.ceil((lockoutTime - (now - lastAttemptTime)) / 1000);
+      document.getElementById('attemptsWarning').style.display = 'block';
+      document.getElementById('countdown').textContent = remainingTime;
+      
+      const countdownInterval = setInterval(() => {
+        const newRemaining = parseInt(document.getElementById('countdown').textContent) - 1;
+        document.getElementById('countdown').textContent = newRemaining;
+        
+        if (newRemaining <= 0) {
+          clearInterval(countdownInterval);
+          document.getElementById('attemptsWarning').style.display = 'none';
+          loginAttempts = 0;
+          localStorage.setItem('loginAttempts', '0');
+        }
+      }, 1000);
+      
+      return true;
+    }
+    
+    if (loginAttempts >= maxAttempts && (now - lastAttemptTime) >= lockoutTime) {
+      loginAttempts = 0;
+      localStorage.setItem('loginAttempts', '0');
+    }
+    
+    return false;
   }
 
   async function tryAutoLogin() {
@@ -172,6 +324,7 @@
 
         if (!snap.exists()) {
           localStorage.removeItem("access_key");
+          localStorage.removeItem("device_id"); // Clear device ID
           errorDiv.innerText = "STORED ACCESS KEY NOT FOUND.";
           return;
         }
@@ -181,27 +334,43 @@
 
         if (data.expiry && now > data.expiry) {
           localStorage.removeItem("access_key");
+          localStorage.removeItem("device_id"); // Clear device ID
           errorDiv.innerText = "STORED ACCESS KEY EXPIRED.";
+          showModal('Access Expired', 'Your stored access key has expired. Please get a new one.');
           return;
         }
 
         if (data.deviceId && data.deviceId !== deviceId) {
           localStorage.removeItem("access_key");
-          errorDiv.innerText = "STORED KEY IS LINKED TO ANOTHER DEVICE.";
+          localStorage.removeItem("device_id"); // Clear device ID
+          errorDiv.innerText = "STORED KEY IS USED ON ANOTHER DEVICE.";
+          showModal('Device Mismatch', 'This key is already registered to another device. Please get a new one or reclaim it.', true);
           return;
         }
 
-        window.location.href = "https://devilhackervipseller.github.io/Testing/";
+        showModal('Welcome Back', 'Auto-login successful! Redirecting...');
+        setTimeout(() => {
+          window.location.href = "https://devilhackervipseller.github.io/Testing/";
+        }, 1500);
       } catch (err) {
         loadingDiv.style.display = "none";
         localStorage.removeItem("access_key");
-        errorDiv.innerText = "ERROR DURING AUTO-LOGIN. PLEASE TRY AGAIN.";
-        console.error("Auto-login error:", err);
+        localStorage.removeItem("device_id"); // Clear device ID
+        errorDiv.innerText = "ERROR DURING AUTO-LOGIN. TRY AGAIN.";
+        console.error(err);
       }
     }
   }
 
   window.handleLogin = async function () {
+    if (isLoggingIn) return; // Prevent multiple simultaneous logins
+    isLoggingIn = true;
+
+    if (checkIfLockedOut()) {
+      isLoggingIn = false;
+      return;
+    }
+    
     const key = document.getElementById("accessKey").value.trim();
     const errorDiv = document.getElementById("error");
     const loadingDiv = document.getElementById("loading");
@@ -212,7 +381,8 @@
 
     if (!key) {
       loadingDiv.style.display = "none";
-      errorDiv.innerText = "PLEASE ENTER AN ACCESS KEY.";
+      errorDiv.innerText = "PLEASE ENTER ACCESS KEY.";
+      isLoggingIn = false;
       return;
     }
 
@@ -221,7 +391,17 @@
       loadingDiv.style.display = "none";
 
       if (!snap.exists()) {
+        loginAttempts++;
+        localStorage.setItem('loginAttempts', loginAttempts.toString());
+        localStorage.setItem('lastAttemptTime', Date.now().toString());
+        
         errorDiv.innerText = "ACCESS KEY NOT FOUND.";
+        
+        if (loginAttempts >= maxAttempts) {
+          checkIfLockedOut();
+        }
+        
+        isLoggingIn = false;
         return;
       }
 
@@ -230,37 +410,76 @@
 
       if (data.expiry && now > data.expiry) {
         errorDiv.innerText = "ACCESS KEY EXPIRED.";
+        showModal('Key Expired', 'This access key has expired. Please get a new one.');
+        isLoggingIn = false;
         return;
       }
 
       if (data.deviceId && data.deviceId !== deviceId) {
-        errorDiv.innerText = "THIS KEY IS ALREADY LINKED TO ANOTHER DEVICE.";
+        errorDiv.innerText = "KEY USED ON ANOTHER DEVICE.";
+        showModal('Device Limit', 'This key is registered to another device. Reclaim it?', true);
+        const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+        const modalCloseBtn = document.getElementById('modalCloseBtn');
+        modalConfirmBtn.textContent = "Reclaim Key";
+        modalCloseBtn.textContent = "Cancel";
+
+        modalConfirmBtn.onclick = async function() {
+          try {
+            await update(ref(db, `accessKeys/${key}`), {
+              deviceId: deviceId, // Reassign to current device
+              lastLogin: now
+            });
+            localStorage.setItem("access_key", key);
+            showModal('Success', 'Key reclaimed! Redirecting...');
+            setTimeout(() => {
+              window.location.href = "https://devilhackervipseller.github.io/Testing/";
+            }, 1500);
+          } catch (err) {
+            errorDiv.innerText = "ERROR RECLAIMING KEY. TRY AGAIN.";
+            console.error(err);
+          }
+          modal.classList.remove('active');
+        };
+        isLoggingIn = false;
         return;
       }
 
       if (!data.deviceId) {
-        await set(ref(db, `accessKeys/${key}`), {
-          ...data,
-          deviceId: deviceId
+        await update(ref(db, `accessKeys/${key}`), {
+          deviceId: deviceId,
+          lastLogin: now
+        });
+      } else {
+        await update(ref(db, `accessKeys/${key}`), {
+          lastLogin: now
         });
       }
 
+      loginAttempts = 0;
+      localStorage.setItem('loginAttempts', '0');
       localStorage.setItem("access_key", key);
-      window.location.href = "https://devilhackervipseller.github.io/Testing/";
+
+      showModal('Success', 'Login successful! Redirecting...');
+      setTimeout(() => {
+        window.location.href = "https://devilhackervipseller.github.io/Testing/";
+      }, 1500);
     } catch (err) {
       loadingDiv.style.display = "none";
-      errorDiv.innerText = "ERROR DURING LOGIN. PLEASE TRY AGAIN.";
-      console.error("Login error:", err);
+      errorDiv.innerText = "ERROR DURING LOGIN. TRY AGAIN.";
+      console.error(err);
+    } finally {
+      isLoggingIn = false;
     }
   };
 
   window.getKey = function () {
-    const message = encodeURIComponent("HELLO DEVIL HACKER BROTHER, I NEED AN ACCESS KEY.");
+    const message = encodeURIComponent("HELLO DEVIL HACKER BROTHER , I NEED A NEW ACCESS KEY DUE TO DEVICE MISMATCH ISSUE.");
     window.open(`https://t.me/Devil_Hacker_Vip?text=${message}`, '_blank');
   };
 
   window.onload = function () {
     tryAutoLogin();
+    checkIfLockedOut();
   };
 </script>
 
@@ -337,4 +556,4 @@
   type();
 </script>
 </body>
-  </html>
+</html>
