@@ -57,10 +57,10 @@
       text-align: center;
       width: 100%;
       max-width: 350px;
-      display: none; /* Hidden during auto-verify */
+      display: none;
     }
     .login-box.show {
-      display: block; /* Shown if auto-verify fails */
+      display: block;
     }
     h1 {
       color: #fff;
@@ -109,12 +109,68 @@
       font-size: 14px;
       margin-top: 10px;
     }
+    .countdown {
+      color: #0ff;
+      font-size: 18px;
+      margin: 15px 0;
+      text-shadow: 0 0 10px #0ff;
+    }
+    .status-indicator {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-left: 10px;
+    }
+    .status-verified {
+      background: #0f0;
+      box-shadow: 0 0 10px #0f0;
+    }
+    .status-pending {
+      background: #ff0;
+      box-shadow: 0 0 10px #ff0;
+    }
+    .status-error {
+      background: #f00;
+      box-shadow: 0 0 10px #f00;
+    }
+    .access-granted {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 10;
+      display: none;
+    }
+    .access-granted.show {
+      display: flex;
+    }
+    .access-granted h2 {
+      color: #0ff;
+      font-size: 32px;
+      text-shadow: 0 0 20px #0ff;
+      margin-bottom: 20px;
+    }
+    .access-granted p {
+      color: #fff;
+      font-size: 18px;
+      margin-bottom: 30px;
+    }
     @media (max-width: 500px) {
       h1 {
         font-size: 24px;
       }
       .small-title {
         font-size: 14px;
+      }
+      .access-granted h2 {
+        font-size: 24px;
       }
     }
   </style>
@@ -124,105 +180,136 @@
 
 <div class="container">
   <div class="small-title" id="typingTitle"></div>
-  <div class="loading" id="loading">VERIFYING...</div>
+  <div class="loading" id="loading">AUTO-VERIFYING ACCESS...</div>
+  <div class="countdown" id="countdown">VERIFICATION TIME: <span id="timer">00:00</span></div>
   <div class="login-box" id="loginBox">
-    <h1>LOGIN</h1>
+    <h1>ACCESS REQUIRED</h1>
     <input type="text" id="accessKey" placeholder="ENTER ACCESS KEY" />
-    <button onclick="handleLogin()">LOGIN</button>
-    <button class="secondary" onclick="getKey()">GET KEY</button>
+    <button onclick="handleLogin()">VERIFY</button>
+    <button class="secondary" onclick="getKey()">REQUEST ACCESS</button>
     <div class="loading" id="manualLoading" style="display:none;">VERIFYING...</div>
     <div class="error" id="error"></div>
   </div>
 </div>
 
-<!-- Firebase Script -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-  import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+<div class="access-granted" id="accessGranted">
+  <h2>ACCESS GRANTED</h2>
+  <p>Welcome back, agent. Your verification is complete.</p>
+  <button onclick="continueToApp()">CONTINUE TO DASHBOARD</button>
+</div>
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyB8vPX5DJ0JL5OpAF2TipkFCEiCUJaWsO4",
-    authDomain: "theeaglepredictor.firebaseapp.com",
-    databaseURL: "https://theeaglepredictor-default-rtdb.firebaseio.com",
-    projectId: "theeaglepredictor",
-    storageBucket: "theeaglepredictor.firebasestorage.app",
-    messagingSenderId: "222835324937",
-    appId: "1:222835324937:web:cdeaec52937fcfb6fa20d8",
-    measurementId: "G-VG094TCNE8"
+<script>
+  // Simulated database of valid keys and their status
+  const validKeys = {
+    "SPY-2024-ALPHA": { deviceId: null, used: false, verifiedAt: null },
+    "SPY-2024-BETA": { deviceId: null, used: false, verifiedAt: null },
+    "SPY-2024-GAMMA": { deviceId: null, used: false, verifiedAt: null },
+    "SPY-2024-DELTA": { deviceId: null, used: false, verifiedAt: null }
   };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
 
   // Generate a persistent device ID
   function getDeviceId() {
     let id = localStorage.getItem("device_id");
     if (!id) {
-      id = crypto.randomUUID();
+      id = 'device-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now().toString(36);
       localStorage.setItem("device_id", id);
     }
     return id;
   }
 
-  // Validate key with retry logic
-  async function validateKey(key, deviceId, retries = 2) {
-    try {
-      const snap = await get(ref(db, `accessKeys/${key}`));
-      if (!snap.exists()) {
-        return { success: false, error: "ACCESS KEY NOT FOUND." };
-      }
-
-      const data = snap.val();
-      
-      // Check if key is already bound to a different device
-      if (data.deviceId && data.deviceId !== deviceId) {
-        return { success: false, error: "THIS KEY IS ALREADY USED ON ANOTHER DEVICE." };
-      }
-
-      return { success: true, data };
-    } catch (err) {
-      if (retries > 0) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
-        return validateKey(key, deviceId, retries - 1);
-      }
-      return { success: false, error: "NETWORK ERROR. PLEASE TRY AGAIN." };
-    }
+  // Get current time in seconds
+  function getCurrentTime() {
+    return Math.floor(Date.now() / 1000);
   }
 
-  // Enhanced auto-verify function
+  // Format time as MM:SS
+  function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  // Validate key with simulated network delay
+  async function validateKey(key, deviceId) {
+    // Simulate network request
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    if (!validKeys[key]) {
+      return { success: false, error: "ACCESS KEY NOT FOUND." };
+    }
+
+    const keyData = validKeys[key];
+    
+    // Check if key is already used on another device after verification period
+    if (keyData.used && keyData.deviceId !== deviceId) {
+      const currentTime = getCurrentTime();
+      const verificationTime = keyData.verifiedAt;
+      
+      // Only show error if 10 seconds have passed since verification
+      if (currentTime - verificationTime >= 10) {
+        return { success: false, error: "THIS KEY IS ALREADY USED ON ANOTHER DEVICE." };
+      }
+    }
+
+    return { success: true, data: keyData };
+  }
+
+  // Auto-verify function
   async function tryAutoLogin() {
     const storedKey = localStorage.getItem("access_key");
     const deviceId = getDeviceId();
     const errorDiv = document.getElementById("error");
     const loadingDiv = document.getElementById("loading");
     const loginBox = document.getElementById("loginBox");
+    const countdownDiv = document.getElementById("countdown");
+    const timerSpan = document.getElementById("timer");
+
+    // Start the countdown timer (10 seconds)
+    let timeLeft = 10;
+    const countdownInterval = setInterval(() => {
+      timerSpan.textContent = formatTime(timeLeft);
+      timeLeft--;
+      
+      if (timeLeft < 0) {
+        clearInterval(countdownInterval);
+      }
+    }, 1000);
 
     if (!storedKey) {
-      loadingDiv.style.display = "none";
-      loginBox.classList.add("show");
+      // No stored key, show login after delay
+      setTimeout(() => {
+        loadingDiv.style.display = "none";
+        countdownDiv.style.display = "none";
+        loginBox.classList.add("show");
+      }, 3000);
       return;
     }
 
-    const result = await validateKey(storedKey, deviceId);
-    if (result.success) {
-      // If key is valid but not bound to this device, bind it
-      if (!result.data.deviceId) {
-        try {
-          await update(ref(db, `accessKeys/${storedKey}`), { deviceId });
-        } catch (err) {
-          console.error("Failed to bind deviceId:", err);
-        }
-      }
+    // Simulate auto-verification process
+    setTimeout(async () => {
+      const result = await validateKey(storedKey, deviceId);
       
-      // Redirect to the main application
-      window.location.href = "https://devilhackervipseller.github.io/Testing/";
-    } else {
-      // Clear invalid key from storage
-      localStorage.removeItem("access_key");
-      loadingDiv.style.display = "none";
-      loginBox.classList.add("show");
-      errorDiv.innerText = result.error;
-    }
+      if (result.success) {
+        // Mark key as used and record verification time
+        if (!result.data.deviceId) {
+          result.data.deviceId = deviceId;
+          result.data.verifiedAt = getCurrentTime();
+          result.data.used = true;
+        }
+        
+        // Show access granted screen
+        loadingDiv.style.display = "none";
+        countdownDiv.style.display = "none";
+        document.getElementById('accessGranted').classList.add('show');
+      } else {
+        // Show error after the verification period
+        localStorage.removeItem("access_key");
+        loadingDiv.style.display = "none";
+        countdownDiv.style.display = "none";
+        loginBox.classList.add("show");
+        errorDiv.innerText = result.error;
+      }
+    }, 3000);
   }
 
   window.handleLogin = async function () {
@@ -234,7 +321,6 @@
 
     errorDiv.innerText = "";
     manualLoadingDiv.style.display = "block";
-    loginBox.classList.add("show");
 
     if (!key) {
       manualLoadingDiv.style.display = "none";
@@ -246,27 +332,33 @@
     manualLoadingDiv.style.display = "none";
 
     if (result.success) {
-      // Bind key to device if not already bound
+      // Bind key to device
       if (!result.data.deviceId) {
-        await update(ref(db, `accessKeys/${key}`), { deviceId });
+        result.data.deviceId = deviceId;
+        result.data.verifiedAt = getCurrentTime();
+        result.data.used = true;
       }
       
       // Store the key for future auto-login
       localStorage.setItem("access_key", key);
       
-      // Redirect to the main application
-      window.location.href = "https://devilhackervipseller.github.io/Testing/";
+      // Show access granted
+      loginBox.classList.remove("show");
+      document.getElementById('accessGranted').classList.add('show');
     } else {
       errorDiv.innerText = result.error;
     }
   };
 
   window.getKey = function () {
-    const message = encodeURIComponent("HELLO DEVIL HACKER BROTHER , I NEED AN ACCESS KEY.");
-    window.open(`https://t.me/Devil_Hacker_Vip?text=${message}`, '_blank');
+    alert("To get an access key, please contact the system administrator.\n\nAvailable demo keys:\nSPY-2024-ALPHA\nSPY-2024-BETA\nSPY-2024-GAMMA\nSPY-2024-DELTA");
   };
 
-  // Run auto-verify after DOM and Firebase are ready
+  window.continueToApp = function () {
+    window.location.href = "https://devilhackervipseller.github.io/Testing/";
+  };
+
+  // Run auto-verify when page loads
   document.addEventListener("DOMContentLoaded", tryAutoLogin);
 </script>
 
@@ -343,4 +435,4 @@
   type();
 </script>
 </body>
-</html>
+  </html>
