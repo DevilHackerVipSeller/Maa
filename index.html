@@ -158,7 +158,7 @@
     return id;
   }
 
-  // New function to check for stored key and attempt auto-login
+  // New function to attempt auto-login with stored key
   async function tryAutoLogin() {
     const storedKey = localStorage.getItem("access_key");
     const deviceId = getDeviceId();
@@ -263,9 +263,7 @@
   };
 
   // Run auto-login check on page load
-  window.onload = function () {
-    tryAutoLogin();
-  };
+  tryAutoLogin();
 </script>
 
 <!-- Starfield Animation -->
@@ -329,7 +327,7 @@
 
 <!-- Typing Animation -->
 <script>
-  const text = "𝐓𝐇𝐄 𝐒𝐏𝐘 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑";
+  const text = "𝐓𝐇𝐄 𝐋𝐒𝐑 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑 𝐕.1";
   let index = 0;
   function type() {
     if (index < text.length) {
