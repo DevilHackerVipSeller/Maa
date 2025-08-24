@@ -105,75 +105,12 @@
       font-size: 14px;
       margin-top: 10px;
     }
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.8);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-    }
-    .modal-overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
-    .modal-content {
-      background: rgba(0, 0, 0, 0.9);
-      border: 2px solid #0ff;
-      box-shadow: 0 0 20px #0ff, 0 0 40px #0ff;
-      padding: 2rem;
-      border-radius: 12px;
-      max-width: 90%;
-      width: 350px;
-      text-align: center;
-      transform: scale(0.9);
-      transition: transform 0.3s ease;
-    }
-    .modal-overlay.active .modal-content {
-      transform: scale(1);
-    }
-    .modal-content h3 {
-      font-size: 20px;
-      text-shadow: 0 0 10px #0ff;
-      margin-bottom: 1rem;
-    }
-    .modal-content p {
-      font-size: 14px;
-      color: #0ff;
-      margin-bottom: 1.5rem;
-    }
-    .modal-content button {
-      padding: 10px 20px;
-      font-size: 14px;
-    }
-    .modal-buttons {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-    }
-    .attempts-warning {
-      color: orange;
-      font-size: 12px;
-      margin-top: 5px;
-      display: none;
-    }
     @media (max-width: 500px) {
       h1 {
         font-size: 24px;
       }
       .small-title {
         font-size: 14px;
-      }
-      .modal-content {
-        width: 90%;
-        padding: 1.5rem;
       }
     }
   </style>
@@ -185,24 +122,11 @@
   <div class="small-title" id="typingTitle"></div>
   <div class="login-box">
     <h1>LOGIN</h1>
-    <input type="text" id="accessKey" placeholder="ENTER ACCESS KEY" onkeypress="handleKeyPress(event)" />
+    <input type="text" id="accessKey" placeholder="ENTER ACCESS KEY" />
     <button onclick="handleLogin()">LOGIN</button>
     <button class="secondary" onclick="getKey()">GET KEY</button>
     <div class="loading" id="loading" style="display:none;">VERIFYING...</div>
     <div class="error" id="error"></div>
-    <div class="attempts-warning" id="attemptsWarning">Too many attempts. Try again in <span id="countdown">30</span> seconds.</div>
-  </div>
-</div>
-
-<!-- Modal for messages -->
-<div class="modal-overlay" id="modal">
-  <div class="modal-content">
-    <h3 id="modalTitle">Title</h3>
-    <p id="modalMessage">Message</p>
-    <div class="modal-buttons">
-      <button id="modalConfirmBtn">OK</button>
-      <button class="secondary" id="modalCloseBtn" style="display:none;">Close</button>
-    </div>
   </div>
 </div>
 
@@ -210,7 +134,6 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
   import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
-  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyB8vPX5DJ0JL5OpAF2TipkFCEiCUJaWsO4",
@@ -225,90 +148,15 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  const auth = getAuth(app);
-
-  // Sign in anonymously
-  signInAnonymously(auth).then(() => {
-    console.log("Signed in anonymously to Firebase.");
-  }).catch((error) => {
-    console.error("Anonymous sign-in failed:", error);
-    showModal('Auth Error', `Failed to sign in anonymously: ${error.message}.`);
-  });
-
-  // Modal functions
-  function showModal(title, message, showCloseBtn = false) {
-    const modal = document.getElementById('modal');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalMessage = document.getElementById('modalMessage');
-    const modalConfirmBtn = document.getElementById('modalConfirmBtn');
-    const modalCloseBtn = document.getElementById('modalCloseBtn');
-    
-    modalTitle.textContent = title;
-    modalMessage.textContent = message;
-    modalCloseBtn.style.display = showCloseBtn ? 'block' : 'none';
-    
-    modal.classList.add('active');
-    
-    modalConfirmBtn.onclick = function() {
-      modal.classList.remove('active');
-    };
-    
-    modalCloseBtn.onclick = function() {
-      modal.classList.remove('active');
-    };
-  }
-
-  // Login attempts tracking
-  let loginAttempts = parseInt(localStorage.getItem('loginAttempts') || '0');
-  let lastAttemptTime = parseInt(localStorage.getItem('lastAttemptTime') || '0');
-  const maxAttempts = 5;
-  const lockoutTime = 30000; // 30 seconds in milliseconds
 
   function getDeviceId() {
     let id = localStorage.getItem("device_id");
     if (!id) {
-      id = crypto.randomUUID();
+      // Generate a simple device ID without using crypto which might not be available everywhere
+      id = 'dev_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
       localStorage.setItem("device_id", id);
     }
     return id;
-  }
-
-  function handleKeyPress(event) {
-    if (event.key === 'Enter') {
-      handleLogin();
-    }
-  }
-
-  function checkIfLockedOut() {
-    const now = Date.now();
-    if (loginAttempts >= maxAttempts && (now - lastAttemptTime) < lockoutTime) {
-      const remainingTime = Math.ceil((lockoutTime - (now - lastAttemptTime)) / 1000);
-      document.getElementById('attemptsWarning').style.display = 'block';
-      document.getElementById('countdown').textContent = remainingTime;
-      
-      // Update countdown every second
-      const countdownInterval = setInterval(() => {
-        const newRemaining = parseInt(document.getElementById('countdown').textContent) - 1;
-        document.getElementById('countdown').textContent = newRemaining;
-        
-        if (newRemaining <= 0) {
-          clearInterval(countdownInterval);
-          document.getElementById('attemptsWarning').style.display = 'none';
-          loginAttempts = 0;
-          localStorage.setItem('loginAttempts', '0');
-        }
-      }, 1000);
-      
-      return true;
-    }
-    
-    // Reset attempts if lockout time has passed
-    if (loginAttempts >= maxAttempts && (now - lastAttemptTime) >= lockoutTime) {
-      loginAttempts = 0;
-      localStorage.setItem('loginAttempts', '0');
-    }
-    
-    return false;
   }
 
   // New function to check for stored key and attempt auto-login
@@ -336,22 +184,17 @@
         if (data.expiry && now > data.expiry) {
           localStorage.removeItem("access_key"); // Clear expired key
           errorDiv.innerText = "STORED ACCESS KEY EXPIRED.";
-          showModal('Access Expired', 'Your stored access key has expired. Please get a new one.');
           return;
         }
 
         if (data.deviceId && data.deviceId !== deviceId) {
           localStorage.removeItem("access_key"); // Clear key if used on another device
           errorDiv.innerText = "STORED KEY IS USED ON ANOTHER DEVICE.";
-          showModal('Device Mismatch', 'This key is already registered to another device.');
           return;
         }
 
         // If all checks pass, redirect to the target page
-        showModal('Welcome Back', 'Auto-login successful! Redirecting...');
-        setTimeout(() => {
-          window.location.href = "https://devilhackervipseller.github.io/Testing/";
-        }, 1500);
+        window.location.href = "https://devilhackervipseller.github.io/Testing/";
       } catch (err) {
         loadingDiv.style.display = "none";
         localStorage.removeItem("access_key"); // Clear key on error
@@ -362,11 +205,6 @@
   }
 
   window.handleLogin = async function () {
-    // Check if user is temporarily locked out
-    if (checkIfLockedOut()) {
-      return;
-    }
-    
     const key = document.getElementById("accessKey").value.trim();
     const errorDiv = document.getElementById("error");
     const loadingDiv = document.getElementById("loading");
@@ -386,17 +224,7 @@
       loadingDiv.style.display = "none";
 
       if (!snap.exists()) {
-        // Increment failed login attempts
-        loginAttempts++;
-        localStorage.setItem('loginAttempts', loginAttempts.toString());
-        localStorage.setItem('lastAttemptTime', Date.now().toString());
-        
         errorDiv.innerText = "ACCESS KEY NOT FOUND.";
-        
-        if (loginAttempts >= maxAttempts) {
-          checkIfLockedOut();
-        }
-        
         return;
       }
 
@@ -405,38 +233,24 @@
 
       if (data.expiry && now > data.expiry) {
         errorDiv.innerText = "ACCESS KEY EXPIRED.";
-        showModal('Key Expired', 'This access key has expired. Please get a new one.');
         return;
       }
 
       if (data.deviceId && data.deviceId !== deviceId) {
         errorDiv.innerText = "THIS KEY IS ALREADY USED ON ANOTHER DEVICE.";
-        showModal('Device Limit', 'This key is already registered to another device.');
         return;
       }
 
       if (!data.deviceId) {
         await update(ref(db, `accessKeys/${key}`), {
-          deviceId: deviceId,
-          lastLogin: now
-        });
-      } else {
-        await update(ref(db, `accessKeys/${key}`), {
-          lastLogin: now
+          deviceId: deviceId
         });
       }
 
-      // Reset login attempts on successful login
-      loginAttempts = 0;
-      localStorage.setItem('loginAttempts', '0');
-      
       // Store the key in localStorage for auto-login
       localStorage.setItem("access_key", key);
 
-      showModal('Success', 'Login successful! Redirecting...');
-      setTimeout(() => {
-        window.location.href = "https://devilhackervipseller.github.io/Testing/";
-      }, 1500);
+      window.location.href = "https://devilhackervipseller.github.io/Testing/";
     } catch (err) {
       loadingDiv.style.display = "none";
       errorDiv.innerText = "ERROR DURING LOGIN. TRY AGAIN.";
@@ -452,9 +266,6 @@
   // Run auto-login check on page load
   window.onload = function () {
     tryAutoLogin();
-    
-    // Check if user was previously locked out
-    checkIfLockedOut();
   };
 </script>
 
@@ -531,4 +342,4 @@
   type();
 </script>
 </body>
-  </html>
+                                    </html>
