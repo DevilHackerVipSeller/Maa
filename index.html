@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>𝐓𝐇𝐄 𝐃𝐄𝐕𝐈𝐋 𝐁𝐎𝐒𝐒 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑</title>
+  <title>𝐓𝐇𝐄 𝐒𝐏𝐘 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
     * {
@@ -132,23 +132,20 @@
 
 <!-- Firebase Script -->
 <script type="module">
-  // Import the functions you need from the SDKs
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
   import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyB8vPX5DJ0JL5OpAF2TipkFCEiCUJaWsO4",
-  authDomain: "theeaglepredictor.firebaseapp.com",
-  databaseURL: "https://theeaglepredictor-default-rtdb.firebaseio.com",
-  projectId: "theeaglepredictor",
-  storageBucket: "theeaglepredictor.firebasestorage.app",
-  messagingSenderId: "222835324937",
-  appId: "1:222835324937:web:cdeaec52937fcfb6fa20d8",
-  measurementId: "G-VG094TCNE8"
-};
-  // Initialize Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyB8vPX5DJ0JL5OpAF2TipkFCEiCUJaWsO4",
+    authDomain: "theeaglepredictor.firebaseapp.com",
+    databaseURL: "https://theeaglepredictor-default-rtdb.firebaseio.com",
+    projectId: "theeaglepredictor",
+    storageBucket: "theeaglepredictor.firebasestorage.app",
+    messagingSenderId: "222835324937",
+    appId: "1:222835324937:web:cdeaec52937fcfb6fa20d8",
+    measurementId: "G-VG094TCNE8"
+  };
+
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
@@ -159,6 +156,51 @@ const firebaseConfig = {
       localStorage.setItem("device_id", id);
     }
     return id;
+  }
+
+  // New function to check for stored key and attempt auto-login
+  async function tryAutoLogin() {
+    const storedKey = localStorage.getItem("access_key");
+    const deviceId = getDeviceId();
+    const errorDiv = document.getElementById("error");
+    const loadingDiv = document.getElementById("loading");
+
+    if (storedKey) {
+      loadingDiv.style.display = "block";
+      try {
+        const snap = await get(ref(db, `accessKeys/${storedKey}`));
+        loadingDiv.style.display = "none";
+
+        if (!snap.exists()) {
+          localStorage.removeItem("access_key"); // Clear invalid key
+          errorDiv.innerText = "STORED ACCESS KEY NOT FOUND.";
+          return;
+        }
+
+        const data = snap.val();
+        const now = Date.now();
+
+        if (data.expiry && now > data.expiry) {
+          localStorage.removeItem("access_key"); // Clear expired key
+          errorDiv.innerText = "STORED ACCESS KEY EXPIRED.";
+          return;
+        }
+
+        if (data.deviceId && data.deviceId !== deviceId) {
+          localStorage.removeItem("access_key"); // Clear key if used on another device
+          errorDiv.innerText = "STORED KEY IS USED ON ANOTHER DEVICE.";
+          return;
+        }
+
+        // If all checks pass, redirect to the target page
+        window.location.href = "https://devilhackervipseller.github.io/Testing/";
+      } catch (err) {
+        loadingDiv.style.display = "none";
+        localStorage.removeItem("access_key"); // Clear key on error
+        errorDiv.innerText = "ERROR DURING AUTO-LOGIN. TRY AGAIN.";
+        console.error(err);
+      }
+    }
   }
 
   window.handleLogin = async function () {
@@ -204,6 +246,9 @@ const firebaseConfig = {
         });
       }
 
+      // Store the key in localStorage for auto-login
+      localStorage.setItem("access_key", key);
+
       window.location.href = "https://devilhackervipseller.github.io/Testing/";
     } catch (err) {
       loadingDiv.style.display = "none";
@@ -215,6 +260,11 @@ const firebaseConfig = {
   window.getKey = function () {
     const message = encodeURIComponent("HELLO DEVIL HACKER BROTHER , I NEED AN ACCESS KEY.");
     window.open(`https://t.me/Devil_Hacker_Vip?text=${message}`, '_blank');
+  };
+
+  // Run auto-login check on page load
+  window.onload = function () {
+    tryAutoLogin();
   };
 </script>
 
@@ -279,7 +329,7 @@ const firebaseConfig = {
 
 <!-- Typing Animation -->
 <script>
-  const text = "𝐓𝐇𝐄 𝐃𝐄𝐕𝐈𝐋 𝐁𝐎𝐒𝐒 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑";
+  const text = "𝐓𝐇𝐄 𝐒𝐏𝐘 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑";
   let index = 0;
   function type() {
     if (index < text.length) {
