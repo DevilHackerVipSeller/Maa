@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>𝐓𝐇𝐄 𝐒𝐏𝐘 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
     * {
@@ -112,14 +111,21 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
+      background-color: rgba(0, 0, 0, 0.8);
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
     }
     .modal-content {
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(0, 0, 0, 0.9);
       border: 2px solid #0ff;
       box-shadow: 0 0 20px #0ff, 0 0 40px #0ff;
       padding: 2rem;
@@ -127,18 +133,11 @@
       max-width: 90%;
       width: 350px;
       text-align: center;
-      animation: fadeInScale 0.3s ease-out forwards;
-      color: #fff;
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
     }
-    @keyframes fadeInScale {
-      from {
-        opacity: 0;
-        transform: scale(0.9);
-      }
-      to {
-        opacity: 1;
-        transform: scale(1);
-      }
+    .modal-overlay.active .modal-content {
+      transform: scale(1);
     }
     .modal-content h3 {
       font-size: 20px;
@@ -154,6 +153,17 @@
       padding: 10px 20px;
       font-size: 14px;
     }
+    .modal-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .attempts-warning {
+      color: orange;
+      font-size: 12px;
+      margin-top: 5px;
+      display: none;
+    }
     @media (max-width: 500px) {
       h1 {
         font-size: 24px;
@@ -163,184 +173,160 @@
       }
       .modal-content {
         width: 90%;
+        padding: 1.5rem;
       }
     }
   </style>
 </head>
 <body>
-  <canvas id="starfieldCanvas" class="starfield-bg"></canvas>
+<canvas id="starfieldCanvas" class="starfield-bg"></canvas>
 
-  <div class="container">
-    <div class="small-title" id="typingTitle"></div>
-    <div class="login-box">
-      <h1>LOGIN</h1>
-      <input type="text" id="accessKey" placeholder="ENTER ACCESS KEY" />
-      <button onclick="handleLogin()">LOGIN</button>
-      <button class="secondary" onclick="getKey()">GET KEY</button>
-      <div class="loading" id="loading" style="display:none;">VERIFYING...</div>
-      <div class="error" id="error"></div>
+<div class="container">
+  <div class="small-title" id="typingTitle"></div>
+  <div class="login-box">
+    <h1>LOGIN</h1>
+    <input type="text" id="accessKey" placeholder="ENTER ACCESS KEY" onkeypress="handleKeyPress(event)" />
+    <button onclick="handleLogin()">LOGIN</button>
+    <button class="secondary" onclick="getKey()">GET KEY</button>
+    <div class="loading" id="loading" style="display:none;">VERIFYING...</div>
+    <div class="error" id="error"></div>
+    <div class="attempts-warning" id="attemptsWarning">Too many attempts. Try again in <span id="countdown">30</span> seconds.</div>
+  </div>
+</div>
+
+<!-- Modal for messages -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-content">
+    <h3 id="modalTitle">Title</h3>
+    <p id="modalMessage">Message</p>
+    <div class="modal-buttons">
+      <button id="modalConfirmBtn">OK</button>
+      <button class="secondary" id="modalCloseBtn" style="display:none;">Close</button>
     </div>
   </div>
+</div>
 
-  <div id="customModal" class="modal-overlay hidden">
-    <div class="modal-content">
-      <h3 id="modalTitle"></h3>
-      <p id="modalMessage"></p>
-      <div class="flex justify-center gap-4">
-        <button id="modalConfirmBtn" class="bg-blue-600 text-white hover:bg-blue-700">OK</button>
-        <button id="modalCloseBtn" class="bg-gray-300 text-gray-800 hover:bg-gray-400">Close</button>
-      </div>
-    </div>
-  </div>
+<!-- Firebase Script -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+  import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
-  <!-- Firebase Script -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
-    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyB8vPX5DJ0JL5OpAF2TipkFCEiCUJaWsO4",
+    authDomain: "theeaglepredictor.firebaseapp.com",
+    databaseURL: "https://theeaglepredictor-default-rtdb.firebaseio.com",
+    projectId: "theeaglepredictor",
+    storageBucket: "theeaglepredictor.firebasestorage.app",
+    messagingSenderId: "222835324937",
+    appId: "1:222835324937:web:cdeaec52937fcfb6fa20d8",
+    measurementId: "G-VG094TCNE8"
+  };
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyB8vPX5DJ0JL5OpAF2TipkFCEiCUJaWsO4",
-      authDomain: "theeaglepredictor.firebaseapp.com",
-      databaseURL: "https://theeaglepredictor-default-rtdb.firebaseio.com",
-      projectId: "theeaglepredictor",
-      storageBucket: "theeaglepredictor.firebasestorage.app",
-      messagingSenderId: "222835324937",
-      appId: "1:222835324937:web:cdeaec52937fcfb6fa20d8",
-      measurementId: "G-VG094TCNE8"
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const auth = getAuth(app);
+
+  // Sign in anonymously
+  signInAnonymously(auth).then(() => {
+    console.log("Signed in anonymously to Firebase.");
+  }).catch((error) => {
+    console.error("Anonymous sign-in failed:", error);
+    showModal('Auth Error', `Failed to sign in anonymously: ${error.message}.`);
+  });
+
+  // Modal functions
+  function showModal(title, message, showCloseBtn = false) {
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+    const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    
+    modalTitle.textContent = title;
+    modalMessage.textContent = message;
+    modalCloseBtn.style.display = showCloseBtn ? 'block' : 'none';
+    
+    modal.classList.add('active');
+    
+    modalConfirmBtn.onclick = function() {
+      modal.classList.remove('active');
     };
+    
+    modalCloseBtn.onclick = function() {
+      modal.classList.remove('active');
+    };
+  }
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const auth = getAuth(app);
+  // Login attempts tracking
+  let loginAttempts = parseInt(localStorage.getItem('loginAttempts') || '0');
+  let lastAttemptTime = parseInt(localStorage.getItem('lastAttemptTime') || '0');
+  const maxAttempts = 5;
+  const lockoutTime = 30000; // 30 seconds in milliseconds
 
-    // Sign in anonymously
-    signInAnonymously(auth).then(() => {
-      console.log("Signed in anonymously to Firebase.");
-    }).catch((error) => {
-      console.error("Anonymous sign-in failed:", error);
-      showModal('Auth Error', `Failed to sign in anonymously: ${error.message}.`, 'error');
-    });
-
-    // Modal Logic
-    function showModal(title, message, type = 'info', confirmCallback = null, closeText = 'Close', confirmText = 'OK') {
-      const modalTitle = document.getElementById('modalTitle');
-      const modalMessage = document.getElementById('modalMessage');
-      const modalConfirmBtn = document.getElementById('modalConfirmBtn');
-      const modalCloseBtn = document.getElementById('modalCloseBtn');
-      const customModal = document.getElementById('customModal');
-
-      modalTitle.textContent = title;
-      modalMessage.textContent = message;
-      customModal.classList.remove('hidden');
-      modalCloseBtn.textContent = closeText;
-      modalConfirmBtn.textContent = confirmText;
-      modalConfirmBtn.classList.remove('bg-green-600', 'bg-blue-600', 'bg-red-600');
-      modalConfirmBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-      modalCloseBtn.classList.remove('hidden');
-
-      if (type === 'success') {
-        modalConfirmBtn.classList.add('bg-green-600');
-        modalConfirmBtn.classList.remove('bg-blue-600');
-        modalConfirmBtn.classList.add('hover:bg-green-700');
-        modalConfirmBtn.textContent = 'Awesome!';
-        modalCloseBtn.classList.add('hidden');
-      } else if (type === 'error') {
-        modalConfirmBtn.classList.add('bg-red-600');
-        modalConfirmBtn.classList.remove('bg-blue-600');
-        modalConfirmBtn.classList.add('hover:bg-red-700');
-        modalConfirmBtn.textContent = 'Got It';
-        modalCloseBtn.classList.add('hidden');
-      }
-
-      modalConfirmBtn.onclick = () => {
-        customModal.classList.add('hidden');
-        if (confirmCallback) confirmCallback();
-      };
-      modalCloseBtn.onclick = () => customModal.classList.add('hidden');
+  function getDeviceId() {
+    let id = localStorage.getItem("device_id");
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem("device_id", id);
     }
+    return id;
+  }
 
-    function getDeviceId() {
-      let id = localStorage.getItem("device_id");
-      if (!id) {
-        id = crypto.randomUUID();
-        localStorage.setItem("device_id", id);
-      }
-      return id;
+  function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+      handleLogin();
     }
+  }
 
-    async function tryAutoLogin() {
-      const storedKey = localStorage.getItem("access_key");
-      const deviceId = getDeviceId();
-      const errorDiv = document.getElementById("error");
-      const loadingDiv = document.getElementById("loading");
-
-      if (storedKey) {
-        loadingDiv.style.display = "block";
-        try {
-          const snap = await get(ref(db, `accessKeys/${storedKey}`));
-          loadingDiv.style.display = "none";
-
-          if (!snap.exists()) {
-            localStorage.removeItem("access_key");
-            errorDiv.innerText = "STORED ACCESS KEY NOT FOUND.";
-            showModal('Error', 'Stored access key not found.', 'error');
-            return;
-          }
-
-          const data = snap.val();
-          const now = Date.now();
-
-          if (data.expiry && now > data.expiry) {
-            localStorage.removeItem("access_key");
-            errorDiv.innerText = "STORED ACCESS KEY EXPIRED.";
-            showModal('Error', 'Stored access key expired.', 'error');
-            return;
-          }
-
-          if (data.deviceId && data.deviceId !== deviceId) {
-            localStorage.removeItem("access_key");
-            errorDiv.innerText = "STORED KEY IS USED ON ANOTHER DEVICE.";
-            showModal('Error', 'Stored key is used on another device.', 'error');
-            return;
-          }
-
-          showModal('Success', 'Auto-login successful!', 'success', () => {
-            window.location.href = "https://devilhackervipseller.github.io/Testing/";
-          });
-        } catch (err) {
-          loadingDiv.style.display = "none";
-          localStorage.removeItem("access_key");
-          errorDiv.innerText = "ERROR DURING AUTO-LOGIN. TRY AGAIN.";
-          showModal('Error', `Error during auto-login: ${err.message}`, 'error');
-          console.error(err);
+  function checkIfLockedOut() {
+    const now = Date.now();
+    if (loginAttempts >= maxAttempts && (now - lastAttemptTime) < lockoutTime) {
+      const remainingTime = Math.ceil((lockoutTime - (now - lastAttemptTime)) / 1000);
+      document.getElementById('attemptsWarning').style.display = 'block';
+      document.getElementById('countdown').textContent = remainingTime;
+      
+      // Update countdown every second
+      const countdownInterval = setInterval(() => {
+        const newRemaining = parseInt(document.getElementById('countdown').textContent) - 1;
+        document.getElementById('countdown').textContent = newRemaining;
+        
+        if (newRemaining <= 0) {
+          clearInterval(countdownInterval);
+          document.getElementById('attemptsWarning').style.display = 'none';
+          loginAttempts = 0;
+          localStorage.setItem('loginAttempts', '0');
         }
-      }
+      }, 1000);
+      
+      return true;
     }
+    
+    // Reset attempts if lockout time has passed
+    if (loginAttempts >= maxAttempts && (now - lastAttemptTime) >= lockoutTime) {
+      loginAttempts = 0;
+      localStorage.setItem('loginAttempts', '0');
+    }
+    
+    return false;
+  }
 
-    window.handleLogin = async function () {
-      const key = document.getElementById("accessKey").value.trim();
-      const errorDiv = document.getElementById("error");
-      const loadingDiv = document.getElementById("loading");
-      const deviceId = getDeviceId();
+  // New function to check for stored key and attempt auto-login
+  async function tryAutoLogin() {
+    const storedKey = localStorage.getItem("access_key");
+    const deviceId = getDeviceId();
+    const errorDiv = document.getElementById("error");
+    const loadingDiv = document.getElementById("loading");
 
-      errorDiv.innerText = "";
+    if (storedKey) {
       loadingDiv.style.display = "block";
-
-      if (!key) {
-        loadingDiv.style.display = "none";
-        errorDiv.innerText = "PLEASE ENTER ACCESS KEY.";
-        showModal('Error', 'Please enter a valid key.', 'error');
-        return;
-      }
-
       try {
-        const snap = await get(ref(db, `accessKeys/${key}`));
+        const snap = await get(ref(db, `accessKeys/${storedKey}`));
         loadingDiv.style.display = "none";
 
         if (!snap.exists()) {
-          errorDiv.innerText = "ACCESS KEY NOT FOUND.";
-          showModal('Error', 'Invalid key. Please try again.', 'error');
+          localStorage.removeItem("access_key"); // Clear invalid key
+          errorDiv.innerText = "STORED ACCESS KEY NOT FOUND.";
           return;
         }
 
@@ -348,116 +334,201 @@
         const now = Date.now();
 
         if (data.expiry && now > data.expiry) {
-          errorDiv.innerText = "ACCESS KEY EXPIRED.";
-          showModal('Error', 'This key has expired.', 'error');
+          localStorage.removeItem("access_key"); // Clear expired key
+          errorDiv.innerText = "STORED ACCESS KEY EXPIRED.";
+          showModal('Access Expired', 'Your stored access key has expired. Please get a new one.');
           return;
         }
 
         if (data.deviceId && data.deviceId !== deviceId) {
-          errorDiv.innerText = "THIS KEY IS ALREADY USED ON ANOTHER DEVICE.";
-          showModal('Error', 'This key is already used on another device.', 'error');
+          localStorage.removeItem("access_key"); // Clear key if used on another device
+          errorDiv.innerText = "STORED KEY IS USED ON ANOTHER DEVICE.";
+          showModal('Device Mismatch', 'This key is already registered to another device.');
           return;
         }
 
-        if (!data.deviceId) {
-          await update(ref(db, `accessKeys/${key}`), {
-            deviceId: deviceId
-          });
-        }
-
-        localStorage.setItem("access_key", key);
-        showModal('Success', 'Login successful!', 'success', () => {
+        // If all checks pass, redirect to the target page
+        showModal('Welcome Back', 'Auto-login successful! Redirecting...');
+        setTimeout(() => {
           window.location.href = "https://devilhackervipseller.github.io/Testing/";
-        });
+        }, 1500);
       } catch (err) {
         loadingDiv.style.display = "none";
-        errorDiv.innerText = "ERROR DURING LOGIN. TRY AGAIN.";
-        showModal('Error', `Login failed: ${err.message}`, 'error');
+        localStorage.removeItem("access_key"); // Clear key on error
+        errorDiv.innerText = "ERROR DURING AUTO-LOGIN. TRY AGAIN.";
         console.error(err);
       }
-    };
+    }
+  }
 
-    window.getKey = function () {
-      const message = encodeURIComponent("HELLO DEVIL HACKER BROTHER , I NEED AN ACCESS KEY.");
-      window.open(`https://t.me/Devil_Hacker_Vip?text=${message}`, '_blank');
-    };
+  window.handleLogin = async function () {
+    // Check if user is temporarily locked out
+    if (checkIfLockedOut()) {
+      return;
+    }
+    
+    const key = document.getElementById("accessKey").value.trim();
+    const errorDiv = document.getElementById("error");
+    const loadingDiv = document.getElementById("loading");
+    const deviceId = getDeviceId();
 
-    window.onload = function () {
-      tryAutoLogin();
-    };
-  </script>
+    errorDiv.innerText = "";
+    loadingDiv.style.display = "block";
 
-  <!-- Starfield Animation -->
-  <script>
-    const canvas = document.getElementById("starfieldCanvas");
-    const ctx = canvas.getContext("2d");
+    if (!key) {
+      loadingDiv.style.display = "none";
+      errorDiv.innerText = "PLEASE ENTER ACCESS KEY.";
+      return;
+    }
+
+    try {
+      const snap = await get(ref(db, `accessKeys/${key}`));
+      loadingDiv.style.display = "none";
+
+      if (!snap.exists()) {
+        // Increment failed login attempts
+        loginAttempts++;
+        localStorage.setItem('loginAttempts', loginAttempts.toString());
+        localStorage.setItem('lastAttemptTime', Date.now().toString());
+        
+        errorDiv.innerText = "ACCESS KEY NOT FOUND.";
+        
+        if (loginAttempts >= maxAttempts) {
+          checkIfLockedOut();
+        }
+        
+        return;
+      }
+
+      const data = snap.val();
+      const now = Date.now();
+
+      if (data.expiry && now > data.expiry) {
+        errorDiv.innerText = "ACCESS KEY EXPIRED.";
+        showModal('Key Expired', 'This access key has expired. Please get a new one.');
+        return;
+      }
+
+      if (data.deviceId && data.deviceId !== deviceId) {
+        errorDiv.innerText = "THIS KEY IS ALREADY USED ON ANOTHER DEVICE.";
+        showModal('Device Limit', 'This key is already registered to another device.');
+        return;
+      }
+
+      if (!data.deviceId) {
+        await update(ref(db, `accessKeys/${key}`), {
+          deviceId: deviceId,
+          lastLogin: now
+        });
+      } else {
+        await update(ref(db, `accessKeys/${key}`), {
+          lastLogin: now
+        });
+      }
+
+      // Reset login attempts on successful login
+      loginAttempts = 0;
+      localStorage.setItem('loginAttempts', '0');
+      
+      // Store the key in localStorage for auto-login
+      localStorage.setItem("access_key", key);
+
+      showModal('Success', 'Login successful! Redirecting...');
+      setTimeout(() => {
+        window.location.href = "https://devilhackervipseller.github.io/Testing/";
+      }, 1500);
+    } catch (err) {
+      loadingDiv.style.display = "none";
+      errorDiv.innerText = "ERROR DURING LOGIN. TRY AGAIN.";
+      console.error(err);
+    }
+  };
+
+  window.getKey = function () {
+    const message = encodeURIComponent("HELLO DEVIL HACKER BROTHER , I NEED AN ACCESS KEY.");
+    window.open(`https://t.me/Devil_Hacker_Vip?text=${message}`, '_blank');
+  };
+
+  // Run auto-login check on page load
+  window.onload = function () {
+    tryAutoLogin();
+    
+    // Check if user was previously locked out
+    checkIfLockedOut();
+  };
+</script>
+
+<!-- Starfield Animation -->
+<script>
+  const canvas = document.getElementById("starfieldCanvas");
+  const ctx = canvas.getContext("2d");
+  canvas.height = window.innerHeight;
+  canvas.width = window.innerWidth;
+
+  const stars = [];
+  const starCount = 400;
+
+  class Star {
+    constructor() {
+      this.angle = Math.random() * Math.PI * 2;
+      this.radius = Math.random() * Math.min(canvas.width, canvas.height) * 0.7;
+      this.speed = Math.random() * 0.02 + 0.01;
+      this.size = Math.random() * 4 + 1;
+      this.color = Math.random() > 0.8 ? "#ffffff" : "#00f7ff";
+    }
+    update() {
+      this.angle += this.speed;
+      this.x = canvas.width / 2 + Math.cos(this.angle) * this.radius;
+      this.y = canvas.height / 2 + Math.sin(this.angle) * this.radius;
+    }
+    draw() {
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function initStars() {
+    for (let i = 0; i < starCount; i++) {
+      stars.push(new Star());
+    }
+  }
+
+  function animateStars() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    stars.forEach(star => {
+      star.update();
+      star.draw();
+    });
+    requestAnimationFrame(animateStars);
+  }
+
+  initStars();
+  animateStars();
+
+  window.addEventListener('resize', () => {
     canvas.height = window.innerHeight;
     canvas.width = window.innerWidth;
-
-    const stars = [];
-    const starCount = 400;
-
-    class Star {
-      constructor() {
-        this.angle = Math.random() * Math.PI * 2;
-        this.radius = Math.random() * Math.min(canvas.width, canvas.height) * 0.7;
-        this.speed = Math.random() * 0.02 + 0.01;
-        this.size = Math.random() * 4 + 1;
-        this.color = Math.random() > 0.8 ? "#ffffff" : "#00f7ff";
-      }
-      update() {
-        this.angle += this.speed;
-        this.x = canvas.width / 2 + Math.cos(this.angle) * this.radius;
-        this.y = canvas.height / 2 + Math.sin(this.angle) * this.radius;
-      }
-      draw() {
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    function initStars() {
-      for (let i = 0; i < starCount; i++) {
-        stars.push(new Star());
-      }
-    }
-
-    function animateStars() {
-      ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      stars.forEach(star => {
-        star.update();
-        star.draw();
-      });
-      requestAnimationFrame(animateStars);
-    }
-
-    initStars();
-    animateStars();
-
-    window.addEventListener('resize', () => {
-      canvas.height = window.innerHeight;
-      canvas.width = window.innerWidth;
-      stars.forEach(star => {
-        star.radius = Math.min(star.radius, Math.min(canvas.width, canvas.height) * 0.7);
-      });
+    stars.forEach(star => {
+      star.radius = Math.min(star.radius, Math.min(canvas.width, canvas.height) * 0.7);
     });
-  </script>
+  });
+</script>
 
-  <!-- Typing Animation -->
-  <script>
-    const text = "𝐓𝐇𝐄 𝐒𝐏𝐘 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑";
-    let index = 0;
-    function type() {
-      if (index < text.length) {
-        document.getElementById("typingTitle").innerHTML += text.charAt(index);
-        index++;
-        setTimeout(type, 100);
-      }
+<!-- Typing Animation -->
+<script>
+  const text = "𝐓𝐇𝐄 𝐒𝐏𝐘 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑";
+  let index = 0;
+  function type() {
+    if (index < text.length) {
+      document.getElementById("typingTitle").innerHTML += text.charAt(index);
+      index++;
+      setTimeout(type, 100);
     }
-    type();
-  </script>
+  }
+  type();
+</script>
 </body>
   </html>
