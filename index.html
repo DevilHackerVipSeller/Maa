@@ -128,10 +128,10 @@
       background: rgba(0, 0, 0, 0.9);
       border: 2px solid #0ff;
       box-shadow: 0 0 20px #0ff, 0 0 40px #0ff;
-      padding: 2rem;
+      padding: 1.5rem;
       border-radius: 12px;
-      max-width: 90%;
-      width: 350px;
+      max-width: 80%;
+      width: 300px;
       text-align: center;
       transform: scale(0.9);
       transition: transform 0.3s ease;
@@ -140,18 +140,18 @@
       transform: scale(1);
     }
     .modal-content h3 {
-      font-size: 20px;
+      font-size: 24px; /* Increased font size */
       text-shadow: 0 0 10px #0ff;
       margin-bottom: 1rem;
     }
     .modal-content p {
-      font-size: 14px;
+      font-size: 12px;
       color: #0ff;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.2rem;
     }
     .modal-content button {
-      padding: 10px 20px;
-      font-size: 14px;
+      padding: 8px 16px;
+      font-size: 12px;
     }
     .modal-buttons {
       display: flex;
@@ -172,8 +172,18 @@
         font-size: 14px;
       }
       .modal-content {
-        width: 90%;
-        padding: 1.5rem;
+        width: 80%;
+        padding: 1rem;
+      }
+      .modal-content h3 {
+        font-size: 20px; /* Adjusted for smaller screens */
+      }
+      .modal-content p {
+        font-size: 11px;
+      }
+      .modal-content button {
+        padding: 7px 14px;
+        font-size: 11px;
       }
     }
   </style>
@@ -227,14 +237,6 @@
   const db = getDatabase(app);
   const auth = getAuth(app);
 
-  // Sign in anonymously
-  signInAnonymously(auth).then(() => {
-    console.log("Signed in anonymously to Firebase.");
-  }).catch((error) => {
-    console.error("Anonymous sign-in failed:", error);
-    showModal('Auth Error', `Failed to sign in anonymously: ${error.message}.`);
-  });
-
   // Modal functions
   function showModal(title, message, showCloseBtn = false) {
     const modal = document.getElementById('modal');
@@ -242,17 +244,17 @@
     const modalMessage = document.getElementById('modalMessage');
     const modalConfirmBtn = document.getElementById('modalConfirmBtn');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
-    
+   
     modalTitle.textContent = title;
     modalMessage.textContent = message;
     modalCloseBtn.style.display = showCloseBtn ? 'block' : 'none';
-    
+   
     modal.classList.add('active');
-    
+   
     modalConfirmBtn.onclick = function() {
       modal.classList.remove('active');
     };
-    
+   
     modalCloseBtn.onclick = function() {
       modal.classList.remove('active');
     };
@@ -265,11 +267,21 @@
   const maxAttempts = 5;
   const lockoutTime = 30000; // 30 seconds in milliseconds
 
+  function getDeviceIdFromCookie() {
+    const cookies = document.cookie.split("; ");
+    for (let cookie of cookies) {
+      const [name, value] = cookie.split("=");
+      if (name === "device_id") return value;
+    }
+    return null;
+  }
+
   function getDeviceId() {
-    let id = localStorage.getItem("device_id");
+    let id = localStorage.getItem("device_id") || getDeviceIdFromCookie();
     if (!id) {
       id = crypto.randomUUID();
       localStorage.setItem("device_id", id);
+      document.cookie = `device_id=${id}; max-age=31536000; path=/`; // 1-year expiration
     }
     return id;
   }
@@ -286,11 +298,11 @@
       const remainingTime = Math.ceil((lockoutTime - (now - lastAttemptTime)) / 1000);
       document.getElementById('attemptsWarning').style.display = 'block';
       document.getElementById('countdown').textContent = remainingTime;
-      
+     
       const countdownInterval = setInterval(() => {
         const newRemaining = parseInt(document.getElementById('countdown').textContent) - 1;
         document.getElementById('countdown').textContent = newRemaining;
-        
+       
         if (newRemaining <= 0) {
           clearInterval(countdownInterval);
           document.getElementById('attemptsWarning').style.display = 'none';
@@ -298,15 +310,15 @@
           localStorage.setItem('loginAttempts', '0');
         }
       }, 1000);
-      
+     
       return true;
     }
-    
+   
     if (loginAttempts >= maxAttempts && (now - lastAttemptTime) >= lockoutTime) {
       loginAttempts = 0;
       localStorage.setItem('loginAttempts', '0');
     }
-    
+   
     return false;
   }
 
@@ -324,7 +336,6 @@
 
         if (!snap.exists()) {
           localStorage.removeItem("access_key");
-          localStorage.removeItem("device_id"); // Clear device ID
           errorDiv.innerText = "STORED ACCESS KEY NOT FOUND.";
           return;
         }
@@ -334,7 +345,6 @@
 
         if (data.expiry && now > data.expiry) {
           localStorage.removeItem("access_key");
-          localStorage.removeItem("device_id"); // Clear device ID
           errorDiv.innerText = "STORED ACCESS KEY EXPIRED.";
           showModal('Access Expired', 'Your stored access key has expired. Please get a new one.');
           return;
@@ -342,7 +352,6 @@
 
         if (data.deviceId && data.deviceId !== deviceId) {
           localStorage.removeItem("access_key");
-          localStorage.removeItem("device_id"); // Clear device ID
           errorDiv.innerText = "STORED KEY IS USED ON ANOTHER DEVICE.";
           showModal('Device Mismatch', 'This key is already registered to another device. Please get a new one or reclaim it.', true);
           return;
@@ -355,7 +364,6 @@
       } catch (err) {
         loadingDiv.style.display = "none";
         localStorage.removeItem("access_key");
-        localStorage.removeItem("device_id"); // Clear device ID
         errorDiv.innerText = "ERROR DURING AUTO-LOGIN. TRY AGAIN.";
         console.error(err);
       }
@@ -370,7 +378,7 @@
       isLoggingIn = false;
       return;
     }
-    
+   
     const key = document.getElementById("accessKey").value.trim();
     const errorDiv = document.getElementById("error");
     const loadingDiv = document.getElementById("loading");
@@ -394,13 +402,13 @@
         loginAttempts++;
         localStorage.setItem('loginAttempts', loginAttempts.toString());
         localStorage.setItem('lastAttemptTime', Date.now().toString());
-        
+       
         errorDiv.innerText = "ACCESS KEY NOT FOUND.";
-        
+       
         if (loginAttempts >= maxAttempts) {
           checkIfLockedOut();
         }
-        
+       
         isLoggingIn = false;
         return;
       }
@@ -417,10 +425,10 @@
 
       if (data.deviceId && data.deviceId !== deviceId) {
         errorDiv.innerText = "KEY USED ON ANOTHER DEVICE.";
-        showModal('Device Limit', 'This key is registered to another device. Reclaim it?', true);
+        showModal('WELCOME TO LSR WORLD', ' “🎉 Welcome VIP USER! Thank you for purchasing ❤️” ', true);
         const modalConfirmBtn = document.getElementById('modalConfirmBtn');
         const modalCloseBtn = document.getElementById('modalCloseBtn');
-        modalConfirmBtn.textContent = "Reclaim Key";
+        modalConfirmBtn.textContent = "LOGIN NOW";
         modalCloseBtn.textContent = "Cancel";
 
         modalConfirmBtn.onclick = async function() {
@@ -544,7 +552,7 @@
 
 <!-- Typing Animation -->
 <script>
-  const text = "𝐓𝐇𝐄 𝐒𝐏𝐘 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑";
+  const text = "𝐖𝐄𝐋𝐂𝐎𝐌𝐄 𝐓𝐎 𝐓𝐇𝐄 𝐋𝐒𝐑 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑";
   let index = 0;
   function type() {
     if (index < text.length) {
@@ -556,4 +564,4 @@
   type();
 </script>
 </body>
-</html>
+  </html>
