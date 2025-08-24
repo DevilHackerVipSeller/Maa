@@ -87,18 +87,22 @@
         const now = Date.now();
 
         if (data.expiry && now > data.expiry) {
-          localStorage.removeItem("access_key");
-          errorDiv.innerText = "ACCESS KEY EXPIRED.";
+          // ✅ Key expired → allow reuse on new device & reset expiry (1 day)
+          await update(ref(db, `accessKeys/${storedKey}`), {
+            deviceId: deviceId,
+            expiry: now + 24 * 60 * 60 * 1000
+          });
+          localStorage.setItem("access_key", storedKey);
+          window.location.href = "https://devilhackervipseller.github.io/Testing/";
           return;
         }
 
         if (data.deviceId && data.deviceId !== deviceId) {
-          localStorage.removeItem("access_key");
-          errorDiv.innerText = "KEY ALREADY USED ON ANOTHER DEVICE.";
+          errorDiv.innerText = "KEY IS STILL ACTIVE ON ANOTHER DEVICE.";
           return;
         }
 
-        // ✅ Success → redirect
+        // ✅ Success
         window.location.href = "https://devilhackervipseller.github.io/Testing/";
       } catch (err) {
         loadingDiv.style.display = "none";
@@ -137,12 +141,18 @@
       const now = Date.now();
 
       if (data.expiry && now > data.expiry) {
-        errorDiv.innerText = "KEY EXPIRED.";
+        // ✅ Expired → rebind to new device and reset expiry (1 day)
+        await update(ref(db, `accessKeys/${key}`), {
+          deviceId: deviceId,
+          expiry: now + 24 * 60 * 60 * 1000
+        });
+        localStorage.setItem("access_key", key);
+        window.location.href = "https://devilhackervipseller.github.io/Testing/";
         return;
       }
 
       if (data.deviceId && data.deviceId !== deviceId) {
-        errorDiv.innerText = "KEY USED ON ANOTHER DEVICE.";
+        errorDiv.innerText = "KEY IS STILL ACTIVE ON ANOTHER DEVICE.";
         return;
       }
 
@@ -164,7 +174,6 @@
     window.open(`https://t.me/Devil_Hacker_Vip?text=${msg}`, "_blank");
   };
 
-  // ✅ always auto verify when page loads
   window.onload = function () {
     if (navigator.onLine) {
       tryAutoLogin();
@@ -180,10 +189,8 @@
   const ctx = canvas.getContext("2d");
   canvas.height = window.innerHeight;
   canvas.width = window.innerWidth;
-
   const stars = [];
   const starCount = 400;
-
   class Star {
     constructor() {
       this.angle = Math.random() * Math.PI * 2;
@@ -204,30 +211,22 @@
       ctx.fill();
     }
   }
-
-  function initStars() {
-    for (let i = 0; i < starCount; i++) stars.push(new Star());
-  }
-
+  function initStars() { for (let i = 0; i < starCount; i++) stars.push(new Star()); }
   function animateStars() {
     ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     stars.forEach(star => { star.update(); star.draw(); });
     requestAnimationFrame(animateStars);
   }
-
-  initStars();
-  animateStars();
-
+  initStars(); animateStars();
   window.addEventListener("resize", () => {
-    canvas.height = window.innerHeight;
-    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight; canvas.width = window.innerWidth;
   });
 </script>
 
 <!-- Typing Animation -->
 <script>
-  const text = "𝐓𝐇𝐄 𝐒𝐏𝐘 𝐏𝐑𝐄𝐃𝐈𝐂i𝐓𝐎𝐑";
+  const text = "𝐓𝐇𝐄 𝐒𝐏𝐘 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑";
   let index = 0;
   function type() {
     if (index < text.length) {
@@ -239,4 +238,4 @@
   type();
 </script>
 </body>
-  </html>
+</html>
