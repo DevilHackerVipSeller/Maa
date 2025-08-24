@@ -57,10 +57,10 @@
       text-align: center;
       width: 100%;
       max-width: 350px;
-      display: none; /* Hidden by default during auto-login */
+      display: none; /* Hidden during auto-verify */
     }
     .login-box.show {
-      display: block; /* Show when auto-login fails or no key */
+      display: block; /* Shown if auto-verify fails */
     }
     h1 {
       color: #fff;
@@ -163,7 +163,7 @@
     return id;
   }
 
-  // Function to validate a key with retry logic
+  // Validate key with retry logic
   async function validateKey(key, deviceId, retries = 2) {
     try {
       const snap = await get(ref(db, `accessKeys/${key}`));
@@ -172,12 +172,6 @@
       }
 
       const data = snap.val();
-      const now = Date.now();
-
-      if (data.expiry && now > data.expiry) {
-        return { success: false, error: "ACCESS KEY EXPIRED." };
-      }
-
       if (data.deviceId && data.deviceId !== deviceId) {
         return { success: false, error: "THIS KEY IS ALREADY USED ON ANOTHER DEVICE." };
       }
@@ -185,14 +179,14 @@
       return { success: true, data };
     } catch (err) {
       if (retries > 0) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
         return validateKey(key, deviceId, retries - 1);
       }
       return { success: false, error: "NETWORK ERROR. PLEASE TRY AGAIN." };
     }
   }
 
-  // Auto-login function
+  // Auto-verify function
   async function tryAutoLogin() {
     const storedKey = localStorage.getItem("access_key");
     const deviceId = getDeviceId();
@@ -208,7 +202,6 @@
 
     const result = await validateKey(storedKey, deviceId);
     if (result.success) {
-      // If no deviceId is set, bind the key to this device
       if (!result.data.deviceId) {
         try {
           await update(ref(db, `accessKeys/${storedKey}`), { deviceId });
@@ -261,7 +254,7 @@
     window.open(`https://t.me/Devil_Hacker_Vip?text=${message}`, '_blank');
   };
 
-  // Run auto-login after Firebase initialization
+  // Run auto-verify after DOM and Firebase are ready
   document.addEventListener("DOMContentLoaded", tryAutoLogin);
 </script>
 
@@ -338,4 +331,4 @@
   type();
 </script>
 </body>
-</html>
+  </html>
