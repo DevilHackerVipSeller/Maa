@@ -133,7 +133,7 @@
 <!-- Firebase Script -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-  import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+  import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyB8vPX5DJ0JL5OpAF2TipkFCEiCUJaWsO4",
@@ -152,14 +152,12 @@
   function getDeviceId() {
     let id = localStorage.getItem("device_id");
     if (!id) {
-      // Generate a simple device ID without using crypto which might not be available everywhere
       id = 'dev_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
       localStorage.setItem("device_id", id);
     }
     return id;
   }
 
-  // New function to check for stored key and attempt auto-login
   async function tryAutoLogin() {
     const storedKey = localStorage.getItem("access_key");
     const deviceId = getDeviceId();
@@ -173,7 +171,7 @@
         loadingDiv.style.display = "none";
 
         if (!snap.exists()) {
-          localStorage.removeItem("access_key"); // Clear invalid key
+          localStorage.removeItem("access_key");
           errorDiv.innerText = "STORED ACCESS KEY NOT FOUND.";
           return;
         }
@@ -182,24 +180,23 @@
         const now = Date.now();
 
         if (data.expiry && now > data.expiry) {
-          localStorage.removeItem("access_key"); // Clear expired key
+          localStorage.removeItem("access_key");
           errorDiv.innerText = "STORED ACCESS KEY EXPIRED.";
           return;
         }
 
         if (data.deviceId && data.deviceId !== deviceId) {
-          localStorage.removeItem("access_key"); // Clear key if used on another device
-          errorDiv.innerText = "STORED KEY IS USED ON ANOTHER DEVICE.";
+          localStorage.removeItem("access_key");
+          errorDiv.innerText = "STORED KEY IS LINKED TO ANOTHER DEVICE.";
           return;
         }
 
-        // If all checks pass, redirect to the target page
         window.location.href = "https://devilhackervipseller.github.io/Testing/";
       } catch (err) {
         loadingDiv.style.display = "none";
-        localStorage.removeItem("access_key"); // Clear key on error
-        errorDiv.innerText = "ERROR DURING AUTO-LOGIN. TRY AGAIN.";
-        console.error(err);
+        localStorage.removeItem("access_key");
+        errorDiv.innerText = "ERROR DURING AUTO-LOGIN. PLEASE TRY AGAIN.";
+        console.error("Auto-login error:", err);
       }
     }
   }
@@ -215,7 +212,7 @@
 
     if (!key) {
       loadingDiv.style.display = "none";
-      errorDiv.innerText = "PLEASE ENTER ACCESS KEY.";
+      errorDiv.innerText = "PLEASE ENTER AN ACCESS KEY.";
       return;
     }
 
@@ -237,33 +234,31 @@
       }
 
       if (data.deviceId && data.deviceId !== deviceId) {
-        errorDiv.innerText = "THIS KEY IS ALREADY USED ON ANOTHER DEVICE.";
+        errorDiv.innerText = "THIS KEY IS ALREADY LINKED TO ANOTHER DEVICE.";
         return;
       }
 
       if (!data.deviceId) {
-        await update(ref(db, `accessKeys/${key}`), {
+        await set(ref(db, `accessKeys/${key}`), {
+          ...data,
           deviceId: deviceId
         });
       }
 
-      // Store the key in localStorage for auto-login
       localStorage.setItem("access_key", key);
-
       window.location.href = "https://devilhackervipseller.github.io/Testing/";
     } catch (err) {
       loadingDiv.style.display = "none";
-      errorDiv.innerText = "ERROR DURING LOGIN. TRY AGAIN.";
-      console.error(err);
+      errorDiv.innerText = "ERROR DURING LOGIN. PLEASE TRY AGAIN.";
+      console.error("Login error:", err);
     }
   };
 
   window.getKey = function () {
-    const message = encodeURIComponent("HELLO DEVIL HACKER BROTHER , I NEED AN ACCESS KEY.");
+    const message = encodeURIComponent("HELLO DEVIL HACKER BROTHER, I NEED AN ACCESS KEY.");
     window.open(`https://t.me/Devil_Hacker_Vip?text=${message}`, '_blank');
   };
 
-  // Run auto-login check on page load
   window.onload = function () {
     tryAutoLogin();
   };
@@ -342,4 +337,4 @@
   type();
 </script>
 </body>
-                                    </html>
+  </html>
