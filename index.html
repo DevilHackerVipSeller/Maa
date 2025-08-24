@@ -1,13 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="The Spy Predictor User Login Panel">
-  <meta name="robots" content="noindex, nofollow">
-  <title>𝐓𝐇𝐄 𝐒𝐏𝐘 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑 - User Panel</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>𝐓𝐇𝐄 𝐒𝐏𝐘 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
     * {
       margin: 0;
       padding: 0;
@@ -16,143 +14,123 @@
       text-transform: uppercase;
     }
     body {
-      background: #0a0a0f;
-      color: #00f7ff;
-      overflow-x: hidden;
-      min-height: 100vh;
+      background: black;
+      overflow: hidden;
+      color: white;
     }
-    #matrixCanvas {
+    .starfield-bg {
       position: fixed;
       top: 0;
       left: 0;
-      z-index: -1;
       width: 100%;
       height: 100%;
-      background: linear-gradient(to bottom, #000, #1a1a2e);
+      background: #000;
+      z-index: 0;
+    }
+    canvas {
+      display: block;
+      opacity: 0.5;
     }
     .container {
-      max-width: 800px;
-      margin: 30px auto;
-      padding: 15px;
+      min-height: 100dvh;
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 100vh;
       flex-direction: column;
+      position: relative;
+      z-index: 1;
+      padding: 20px;
     }
-    h1 {
-      text-align: center;
-      color: #00f7ff;
-      text-shadow: 0 0 15px #00f7ff, 0 0 30px #8400ff;
-      margin-bottom: 25px;
-      font-size: 32px;
-      animation: glow 2s ease-in-out infinite alternate;
-    }
-    @keyframes glow {
-      from { text-shadow: 0 0 10px #00f7ff, 0 0 20px #8400ff; }
-      to { text-shadow: 0 0 20px #00f7ff, 0 0 40px #8400ff; }
+    .small-title {
+      color: #0ff;
+      margin-bottom: 10px;
+      font-size: 16px;
+      letter-spacing: 2px;
+      text-shadow: 0 0 8px #0ff;
     }
     .login-box {
-      background: linear-gradient(135deg, rgba(20,20,30,0.8), rgba(0,0,0,0.9));
-      border: 2px solid #00f7ff;
+      background: rgba(0, 0, 0, 0.75);
+      border: 2px solid #0ff;
+      box-shadow: 0 0 20px #0ff, 0 0 40px #0ff;
+      padding: 30px 20px;
       border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 0 25px rgba(0,247,255,0.5);
-      transition: transform 0.3s, box-shadow 0.3s;
+      text-align: center;
       width: 100%;
-      max-width: 400px;
-      display: none;
+      max-width: 350px;
     }
-    .login-box.show {
-      display: block;
+    h1 {
+      color: #fff;
+      font-size: 28px;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px #0ff;
     }
-    .login-box:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 0 40px rgba(0,247,255,0.7);
-    }
-    input, button {
+    input {
       width: 100%;
-      padding: 10px;
-      margin: 8px 0;
+      padding: 12px;
+      font-size: 14px;
       border: none;
       border-radius: 8px;
-      font-size: 15px;
-      background: linear-gradient(145deg, #14141c, #1e1e2d);
-      color: #00ffe0;
-      box-shadow: inset 0 0 8px rgba(0,255,224,0.3);
-      outline: none;
-      transition: all 0.3s;
-    }
-    input:focus {
-      box-shadow: 0 0 12px #00f7ff;
-      transform: scale(1.02);
+      margin-bottom: 20px;
+      text-align: center;
     }
     button {
-      background: linear-gradient(45deg, #8400ff, #00f7ff);
-      color: white;
-      font-weight: 600;
-      box-shadow: 0 0 15px rgba(132,0,255,0.5);
+      padding: 12px 20px;
+      background: #00ffff;
+      color: black;
+      font-weight: bold;
+      border: none;
+      border-radius: 8px;
       cursor: pointer;
-      position: relative;
-      overflow: hidden;
-    }
-    button::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
+      box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
       width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-      transition: left 0.5s;
-    }
-    button:hover::before {
-      left: 100%;
+      margin-top: 5px;
+      transition: all 0.3s ease;
     }
     button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 25px rgba(132,0,255,0.7);
+      box-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff;
     }
     button.secondary {
       background: transparent;
-      border: 1px solid #00f7ff;
-      box-shadow: 0 0 10px rgba(0,247,255,0.5);
+      color: #0ff;
+      border: 1px solid #0ff;
+      box-shadow: 0 0 10px #0ff;
     }
     .error {
-      font-size: 13px;
-      color: #ff4d4d;
-      margin-bottom: 12px;
-      text-align: center;
+      color: red;
+      margin-top: 10px;
+      font-size: 14px;
     }
     .loading {
-      font-size: 15px;
-      color: #00f7ff;
-      margin-bottom: 12px;
-      text-align: center;
+      color: #0ff;
+      font-size: 14px;
+      margin-top: 10px;
     }
-    @media (max-width: 768px) {
-      h1 { font-size: 24px; }
-      .container { padding: 10px; }
-      .login-box { padding: 15px; max-width: 90%; }
-      input, button { font-size: 13px; }
+    @media (max-width: 500px) {
+      h1 {
+        font-size: 24px;
+      }
+      .small-title {
+        font-size: 14px;
+      }
     }
   </style>
 </head>
 <body>
-<canvas id="matrixCanvas"></canvas>
+<canvas id="starfieldCanvas" class="starfield-bg"></canvas>
+
 <div class="container">
-  <h1>𝐓𝐇𝐄 𝐒𝐏𝐘 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑</h1>
-  <div class="loading" id="loading">VERIFYING...</div>
-  <div class="login-box" id="loginBox">
-    <input type="text" id="accessKey" placeholder="ENTER ACCESS KEY" aria-label="Access Key">
+  <div class="small-title" id="typingTitle"></div>
+  <div class="login-box">
+    <h1>LOGIN</h1>
+    <input type="text" id="accessKey" placeholder="ENTER ACCESS KEY" />
     <button onclick="handleLogin()">LOGIN</button>
     <button class="secondary" onclick="getKey()">GET KEY</button>
-    <div class="loading" id="manualLoading" style="display:none;">VERIFYING...</div>
+    <div class="loading" id="loading" style="display:none;">VERIFYING...</div>
     <div class="error" id="error"></div>
   </div>
 </div>
 
-<!-- Firebase Script -->
+<!-- Firebase and Login Logic -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
   import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
@@ -180,87 +158,106 @@
     return id;
   }
 
-  async function validateKey(key, deviceId, retries = 2) {
-    try {
-      const snap = await get(ref(db, `accessKeys/${key}`));
-      if (!snap.exists()) {
-        return { success: false, error: "ACCESS KEY NOT FOUND." };
-      }
-
-      const data = snap.val();
-      if (data.deviceId && data.deviceId !== deviceId) {
-        return { success: false, error: "THIS KEY IS ALREADY USED ON ANOTHER DEVICE." };
-      }
-
-      return { success: true, data };
-    } catch (err) {
-      if (retries > 0) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return validateKey(key, deviceId, retries - 1);
-      }
-      return { success: false, error: "NETWORK ERROR. PLEASE TRY AGAIN." };
-    }
-  }
-
   async function tryAutoLogin() {
     const storedKey = localStorage.getItem("access_key");
     const deviceId = getDeviceId();
     const errorDiv = document.getElementById("error");
     const loadingDiv = document.getElementById("loading");
-    const loginBox = document.getElementById("loginBox");
 
-    if (!storedKey) {
-      loadingDiv.style.display = "none";
-      loginBox.classList.add("show");
+    // Prevent auto-login loop
+    const lastAttempt = localStorage.getItem("last_auto_login_attempt");
+    const now = Date.now();
+    if (lastAttempt && now - parseInt(lastAttempt) < 5000) {
+      errorDiv.innerText = "AUTO-LOGIN TEMPORARILY DISABLED. PLEASE LOGIN MANUALLY.";
       return;
     }
 
-    const result = await validateKey(storedKey, deviceId);
-    if (result.success) {
-      if (!result.data.deviceId) {
-        try {
-          await update(ref(db, `accessKeys/${storedKey}`), { deviceId });
-        } catch (err) {
-          console.error("Failed to bind deviceId:", err);
+    if (storedKey) {
+      loadingDiv.style.display = "block";
+      try {
+        localStorage.setItem("last_auto_login_attempt", now.toString());
+        const snap = await get(ref(db, `accessKeys/${storedKey}`));
+        loadingDiv.style.display = "none";
+
+        if (!snap.exists()) {
+          localStorage.removeItem("access_key");
+          errorDiv.innerText = "STORED ACCESS KEY NOT FOUND. PLEASE ENTER A NEW KEY.";
+          return;
         }
+
+        const data = snap.val();
+        if (data.expiry && now > data.expiry) {
+          localStorage.removeItem("access_key");
+          errorDiv.innerText = "STORED ACCESS KEY EXPIRED. PLEASE OBTAIN A NEW KEY.";
+          return;
+        }
+
+        if (data.deviceId && data.deviceId !== deviceId) {
+          localStorage.removeItem("access_key");
+          errorDiv.innerText = "STORED KEY IS USED ON ANOTHER DEVICE. CONTACT SUPPORT TO RESET.";
+          return;
+        }
+
+        window.location.href = "https://devilhackervipseller.github.io/Testing/";
+      } catch (err) {
+        loadingDiv.style.display = "none";
+        localStorage.removeItem("access_key");
+        errorDiv.innerText = "ERROR DURING AUTO-LOGIN. CHECK YOUR CONNECTION AND TRY AGAIN.";
+        console.error("Auto-login error:", err);
       }
-      window.location.href = "https://devilhackervipseller.github.io/Testing/";
-    } else {
-      localStorage.removeItem("access_key");
-      loadingDiv.style.display = "none";
-      loginBox.classList.add("show");
-      errorDiv.innerText = result.error;
     }
   }
 
   window.handleLogin = async function () {
     const key = document.getElementById("accessKey").value.trim();
     const errorDiv = document.getElementById("error");
-    const manualLoadingDiv = document.getElementById("manualLoading");
-    const loginBox = document.getElementById("loginBox");
+    const loadingDiv = document.getElementById("loading");
     const deviceId = getDeviceId();
 
     errorDiv.innerText = "";
-    manualLoadingDiv.style.display = "block";
-    loginBox.classList.add("show");
+    loadingDiv.style.display = "block";
 
     if (!key) {
-      manualLoadingDiv.style.display = "none";
-      errorDiv.innerText = "PLEASE ENTER ACCESS KEY.";
+      loadingDiv.style.display = "none";
+      errorDiv.innerText = "PLEASE ENTER AN ACCESS KEY.";
       return;
     }
 
-    const result = await validateKey(key, deviceId);
-    manualLoadingDiv.style.display = "none";
+    try {
+      const snap = await get(ref(db, `accessKeys/${key}`));
+      loadingDiv.style.display = "none";
 
-    if (result.success) {
-      if (!result.data.deviceId) {
-        await update(ref(db, `accessKeys/${key}`), { deviceId });
+      if (!snap.exists()) {
+        errorDiv.innerText = "ACCESS KEY NOT FOUND.";
+        return;
       }
+
+      const data = snap.val();
+      const now = Date.now();
+
+      if (data.expiry && now > data.expiry) {
+        errorDiv.innerText = "ACCESS KEY EXPIRED.";
+        return;
+      }
+
+      if (data.deviceId && data.deviceId !== deviceId) {
+        errorDiv.innerText = "THIS KEY IS ALREADY USED ON ANOTHER DEVICE. CONTACT SUPPORT.";
+        return;
+      }
+
+      if (!data.deviceId) {
+        await update(ref(db, `accessKeys/${key}`), {
+          deviceId: deviceId
+        });
+      }
+
       localStorage.setItem("access_key", key);
+      localStorage.removeItem("last_auto_login_attempt");
       window.location.href = "https://devilhackervipseller.github.io/Testing/";
-    } else {
-      errorDiv.innerText = result.error;
+    } catch (err) {
+      loadingDiv.style.display = "none";
+      errorDiv.innerText = "ERROR DURING LOGIN. CHECK YOUR CONNECTION AND TRY AGAIN.";
+      console.error("Login error:", err);
     }
   };
 
@@ -269,41 +266,86 @@
     window.open(`https://t.me/Devil_Hacker_Vip?text=${message}`, '_blank');
   };
 
-  document.addEventListener("DOMContentLoaded", tryAutoLogin);
+  window.onload = function () {
+    if (navigator.onLine) {
+      tryAutoLogin();
+    } else {
+      document.getElementById("error").innerText = "NO INTERNET CONNECTION. PLEASE CONNECT AND REFRESH.";
+    }
+  };
 </script>
 
-<!-- Matrix Background Animation -->
+<!-- Starfield Animation -->
 <script>
-  const canvas = document.getElementById('matrixCanvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = window.innerWidth;
+  const canvas = document.getElementById("starfieldCanvas");
+  const ctx = canvas.getContext("2d");
   canvas.height = window.innerHeight;
-  const letters = "アァイゥエオカキクケコサシスセソABCDEFGHIJKLMNOPQRSTUVWXYZ123456789".split("");
-  const fontSize = 14;
-  const columns = Math.floor(canvas.width / fontSize);
-  const drops = Array.from({ length: columns }, () => Math.random() * canvas.height / fontSize);
+  canvas.width = window.innerWidth;
 
-  function drawMatrix() {
-    ctx.fillStyle = "rgba(0,0,0,0.1)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    drops.forEach((y, x) => {
-      const text = letters[Math.floor(Math.random() * letters.length)];
-      const alpha = Math.min(1, y / 20);
-      ctx.fillStyle = `rgba(0,255,153,${alpha})`;
-      ctx.font = `${fontSize}px monospace`;
-      ctx.fillText(text, x * fontSize, y * fontSize);
-      drops[x] += 0.5;
-      if (y * fontSize > canvas.height && Math.random() > 0.98) drops[x] = 0;
-    });
+  const stars = [];
+  const starCount = 400;
+
+  class Star {
+    constructor() {
+      this.angle = Math.random() * Math.PI * 2;
+      this.radius = Math.random() * Math.min(canvas.width, canvas.height) * 0.7;
+      this.speed = Math.random() * 0.02 + 0.01;
+      this.size = Math.random() * 4 + 1;
+      this.color = Math.random() > 0.8 ? "#ffffff" : "#00f7ff";
+    }
+    update() {
+      this.angle += this.speed;
+      this.x = canvas.width / 2 + Math.cos(this.angle) * this.radius;
+      this.y = canvas.height / 2 + Math.sin(this.angle) * this.radius;
+    }
+    draw() {
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
-  setInterval(drawMatrix, 50);
-  window.addEventListener("resize", () => {
-    canvas.width = window.innerWidth;
+  function initStars() {
+    for (let i = 0; i < starCount; i++) {
+      stars.push(new Star());
+    }
+  }
+
+  function animateStars() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    stars.forEach(star => {
+      star.update();
+      star.draw();
+    });
+    requestAnimationFrame(animateStars);
+  }
+
+  initStars();
+  animateStars();
+
+  window.addEventListener('resize', () => {
     canvas.height = window.innerHeight;
-    drops.length = Math.floor(canvas.width / fontSize);
-    drops.fill(1);
+    canvas.width = window.innerWidth;
+    stars.forEach(star => {
+      star.radius = Math.min(star.radius, Math.min(canvas.width, canvas.height) * 0.7);
+    });
   });
 </script>
+
+<!-- Typing Animation -->
+<script>
+  const text = "𝐓𝐇𝐄 𝐒𝐏𝐘 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑";
+  let index = 0;
+  function type() {
+    if (index < text.length) {
+      document.getElementById("typingTitle").innerHTML += text.charAt(index);
+      index++;
+      setTimeout(type, 100);
+    }
+  }
+  type();
+</script>
 </body>
-  </html>
+</html>
