@@ -57,6 +57,10 @@
       text-align: center;
       width: 100%;
       max-width: 350px;
+      display: none; /* Hidden by default during auto-login */
+    }
+    .login-box.show {
+      display: block; /* Show when auto-login fails or no key */
     }
     h1 {
       color: #fff;
@@ -120,12 +124,13 @@
 
 <div class="container">
   <div class="small-title" id="typingTitle"></div>
-  <div class="login-box">
+  <div class="loading" id="loading">VERIFYING...</div>
+  <div class="login-box" id="loginBox">
     <h1>LOGIN</h1>
     <input type="text" id="accessKey" placeholder="ENTER ACCESS KEY" />
     <button onclick="handleLogin()">LOGIN</button>
     <button class="secondary" onclick="getKey()">GET KEY</button>
-    <div class="loading" id="loading" style="display:none;">VERIFYING...</div>
+    <div class="loading" id="manualLoading" style="display:none;">VERIFYING...</div>
     <div class="error" id="error"></div>
   </div>
 </div>
@@ -158,102 +163,96 @@
     return id;
   }
 
-  // New function to attempt auto-login with stored key
-  async function tryAutoLogin() {
-    const storedKey = localStorage.getItem("access_key");
-    const deviceId = getDeviceId();
-    const errorDiv = document.getElementById("error");
-    const loadingDiv = document.getElementById("loading");
-
-    if (storedKey) {
-      loadingDiv.style.display = "block";
-      try {
-        const snap = await get(ref(db, `accessKeys/${storedKey}`));
-        loadingDiv.style.display = "none";
-
-        if (!snap.exists()) {
-          localStorage.removeItem("access_key"); // Clear invalid key
-          errorDiv.innerText = "STORED ACCESS KEY NOT FOUND.";
-          return;
-        }
-
-        const data = snap.val();
-        const now = Date.now();
-
-        if (data.expiry && now > data.expiry) {
-          localStorage.removeItem("access_key"); // Clear expired key
-          errorDiv.innerText = "STORED ACCESS KEY EXPIRED.";
-          return;
-        }
-
-        if (data.deviceId && data.deviceId !== deviceId) {
-          localStorage.removeItem("access_key"); // Clear key if used on another device
-          errorDiv.innerText = "STORED KEY IS USED ON ANOTHER DEVICE.";
-          return;
-        }
-
-        // If all checks pass, redirect to the target page
-        window.location.href = "https://devilhackervipseller.github.io/Testing/";
-      } catch (err) {
-        loadingDiv.style.display = "none";
-        localStorage.removeItem("access_key"); // Clear key on error
-        errorDiv.innerText = "ERROR DURING AUTO-LOGIN. TRY AGAIN.";
-        console.error(err);
-      }
-    }
-  }
-
-  window.handleLogin = async function () {
-    const key = document.getElementById("accessKey").value.trim();
-    const errorDiv = document.getElementById("error");
-    const loadingDiv = document.getElementById("loading");
-    const deviceId = getDeviceId();
-
-    errorDiv.innerText = "";
-    loadingDiv.style.display = "block";
-
-    if (!key) {
-      loadingDiv.style.display = "none";
-      errorDiv.innerText = "PLEASE ENTER ACCESS KEY.";
-      return;
-    }
-
+  // Function to validate a key with retry logic
+  async function validateKey(key, deviceId, retries = 2) {
     try {
       const snap = await get(ref(db, `accessKeys/${key}`));
-      loadingDiv.style.display = "none";
-
       if (!snap.exists()) {
-        errorDiv.innerText = "ACCESS KEY NOT FOUND.";
-        return;
+        return { success: false, error: "ACCESS KEY NOT FOUND." };
       }
 
       const data = snap.val();
       const now = Date.now();
 
       if (data.expiry && now > data.expiry) {
-        errorDiv.innerText = "ACCESS KEY EXPIRED.";
-        return;
+        return { success: false, error: "ACCESS KEY EXPIRED." };
       }
 
       if (data.deviceId && data.deviceId !== deviceId) {
-        errorDiv.innerText = "THIS KEY IS ALREADY USED ON ANOTHER DEVICE.";
-        return;
+        return { success: false, error: "THIS KEY IS ALREADY USED ON ANOTHER DEVICE." };
       }
 
-      if (!data.deviceId) {
-        await update(ref(db, `accessKeys/${key}`), {
-          deviceId: deviceId
-        });
-      }
-
-      // Store the key in localStorage for auto-login
-      localStorage.setItem("access_key", key);
-
-      window.location.href = "https://devilhackervipseller.github.io/Testing/";
+      return { success: true, data };
     } catch (err) {
+      if (retries > 0) {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+        return validateKey(key, deviceId, retries - 1);
+      }
+      return { success: false, error: "NETWORK ERROR. PLEASE TRY AGAIN." };
+    }
+  }
+
+  // Auto-login function
+  async function tryAutoLogin() {
+    const storedKey = localStorage.getItem("access_key");
+    const deviceId = getDeviceId();
+    const errorDiv = document.getElementById("error");
+    const loadingDiv = document.getElementById("loading");
+    const loginBox = document.getElementById("loginBox");
+
+    if (!storedKey) {
       loadingDiv.style.display = "none";
-      errorDiv.innerText = "ERROR DURING LOGIN. TRY AGAIN.";
-      console.error(err);
+      loginBox.classList.add("show");
+      return;
+    }
+
+    const result = await validateKey(storedKey, deviceId);
+    if (result.success) {
+      // If no deviceId is set, bind the key to this device
+      if (!result.data.deviceId) {
+        try {
+          await update(ref(db, `accessKeys/${storedKey}`), { deviceId });
+        } catch (err) {
+          console.error("Failed to bind deviceId:", err);
+        }
+      }
+      window.location.href = "https://devilhackervipseller.github.io/Testing/";
+    } else {
+      localStorage.removeItem("access_key"); // Clear invalid key
+      loadingDiv.style.display = "none";
+      loginBox.classList.add("show");
+      errorDiv.innerText = result.error;
+    }
+  }
+
+  window.handleLogin = async function () {
+    const key = document.getElementById("accessKey").value.trim();
+    const errorDiv = document.getElementById("error");
+    const manualLoadingDiv = document.getElementById("manualLoading");
+    const loginBox = document.getElementById("loginBox");
+    const deviceId = getDeviceId();
+
+    errorDiv.innerText = "";
+    manualLoadingDiv.style.display = "block";
+    loginBox.classList.add("show");
+
+    if (!key) {
+      manualLoadingDiv.style.display = "none";
+      errorDiv.innerText = "PLEASE ENTER ACCESS KEY.";
+      return;
+    }
+
+    const result = await validateKey(key, deviceId);
+    manualLoadingDiv.style.display = "none";
+
+    if (result.success) {
+      if (!result.data.deviceId) {
+        await update(ref(db, `accessKeys/${key}`), { deviceId });
+      }
+      localStorage.setItem("access_key", key);
+      window.location.href = "https://devilhackervipseller.github.io/Testing/";
+    } else {
+      errorDiv.innerText = result.error;
     }
   };
 
@@ -262,8 +261,8 @@
     window.open(`https://t.me/Devil_Hacker_Vip?text=${message}`, '_blank');
   };
 
-  // Run auto-login check on page load
-  tryAutoLogin();
+  // Run auto-login after Firebase initialization
+  document.addEventListener("DOMContentLoaded", tryAutoLogin);
 </script>
 
 <!-- Starfield Animation -->
@@ -327,7 +326,7 @@
 
 <!-- Typing Animation -->
 <script>
-  const text = "𝐓𝐇𝐄 𝐋𝐒𝐑 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑 𝐕.1";
+  const text = "𝐓𝐇𝐄 𝐒𝐏𝐘 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑";
   let index = 0;
   function type() {
     if (index < text.length) {
