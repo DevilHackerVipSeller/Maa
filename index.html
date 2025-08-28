@@ -1,292 +1,530 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>𝐓𝐇𝐄 𝐒𝐏𝐘 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑</title>
+  <title>LSR Predictor - Secure Login</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: 'Orbitron', sans-serif;
-      text-transform: uppercase;
+      font-family: 'Poppins', sans-serif;
     }
     body {
-      background: black;
+      background: linear-gradient(135deg, #0d0d2b 0%, #1a1a4e 100%);
+      min-height: 100vh;
       overflow: hidden;
-      color: white;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
-    .starfield-bg {
+    .particle-bg {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: #000;
       z-index: 0;
     }
     canvas {
       display: block;
-      opacity: 0.5; /* Added from the second page to match the Starfield style */
+      opacity: 0.6;
     }
     .container {
-      min-height: 100dvh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
       position: relative;
       z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       padding: 20px;
     }
-    .small-title {
-      color: #0ff;
-      margin-bottom: 10px;
-      font-size: 16px;
-      letter-spacing: 2px;
-      text-shadow: 0 0 8px #0ff;
+    .title {
+      font-size: 2.5rem;
+      font-weight: 600;
+      color: #00eaff;
+      text-shadow: 0 0 10px rgba(0, 234, 255, 0.8);
+      margin-bottom: 1.5rem;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    @keyframes glow {
+      from { text-shadow: 0 0 10px rgba(0, 234, 255, 0.8), 0 0 20px rgba(0, 234, 255, 0.4); }
+      to { text-shadow: 0 0 20px rgba(0, 234, 255, 1), 0 0 30px rgba(0, 234, 255, 0.6); }
     }
     .login-box {
-      background: rgba(0, 0, 0, 0.75);
-      border: 2px solid #0ff;
-      box-shadow: 0 0 20px #0ff, 0 0 40px #0ff;
-      padding: 30px 20px;
-      border-radius: 12px;
-      text-align: center;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      padding: 2rem;
       width: 100%;
-      max-width: 350px;
+      max-width: 400px;
+      box-shadow: 0 0 30px rgba(0, 234, 255, 0.3);
+      text-align: center;
     }
     h1 {
+      font-size: 1.8rem;
+      font-weight: 600;
       color: #fff;
-      font-size: 28px;
-      margin-bottom: 20px;
-      text-shadow: 0 0 10px #0ff;
+      margin-bottom: 1.5rem;
     }
     input {
       width: 100%;
       padding: 12px;
-      font-size: 14px;
+      font-size: 1rem;
       border: none;
       border-radius: 8px;
-      margin-bottom: 20px;
-      text-align: center;
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      margin-bottom: 1.2rem;
+      transition: all 0.3s ease;
+    }
+    input:focus {
+      outline: none;
+      box-shadow: 0 0 10px #00eaff;
+      background: rgba(255, 255, 255, 0.2);
+    }
+    input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
     }
     button {
-      padding: 12px 20px;
-      background: #00ffff;
-      color: black;
-      font-weight: bold;
+      width: 100%;
+      padding: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      background: #00eaff;
+      color: #0d0d2b;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff;
-      width: 100%;
-      margin-top: 5px;
       transition: all 0.3s ease;
+      box-shadow: 0 0 10px rgba(0, 234, 255, 0.5);
     }
     button:hover {
-      box-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff;
+      background: #00c4d4;
+      box-shadow: 0 0 15px rgba(0, 234, 255, 0.8);
     }
     button.secondary {
       background: transparent;
-      color: #0ff;
-      border: 1px solid #0ff;
-      box-shadow: 0 0 10px #0ff;
+      border: 2px solid #00eaff;
+      color: #00eaff;
+      box-shadow: none;
+    }
+    button.secondary:hover {
+      background: rgba(0, 234, 255, 0.2);
     }
     .error {
-      color: red;
-      margin-top: 10px;
-      font-size: 14px;
+      color: #ff4d4d;
+      font-size: 0.9rem;
+      margin-top: 1rem;
     }
     .loading {
-      color: #0ff;
-      font-size: 14px;
-      margin-top: 10px;
+      color: #00eaff;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+    .attempts-warning {
+      color: #ffaa00;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+      display: none;
+    }
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal-content {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 2px solid #00eaff;
+      border-radius: 12px;
+      padding: 1.5rem;
+      max-width: 90%;
+      width: 350px;
+      text-align: center;
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+    .modal-overlay.active .modal-content {
+      transform: scale(1);
+    }
+    .modal-content h3 {
+      font-size: 1.5rem;
+      color: #00eaff;
+      margin-bottom: 1rem;
+    }
+    .modal-content p {
+      font-size: 0.9rem;
+      color: #fff;
+      margin-bottom: 1.2rem;
+    }
+    .modal-content button {
+      padding: 10px 20px;
+      font-size: 0.9rem;
     }
     @media (max-width: 500px) {
-      h1 {
-        font-size: 24px;
+      .title {
+        font-size: 1.8rem;
       }
-      .small-title {
-        font-size: 14px;
+      .login-box {
+        padding: 1.5rem;
+        max-width: 90%;
+      }
+      h1 {
+        font-size: 1.0rem;
+      }
+      input, button {
+        font-size: 0.9rem;
+      }
+      .modal-content {
+        width: 90%;
+      }
+      .modal-content h3 {
+        font-size: 1.2rem;
+      }
+      .modal-content p {
+        font-size: 0.8rem;
       }
     }
   </style>
 </head>
 <body>
-<canvas id="starfieldCanvas" class="starfield-bg"></canvas>
-
-<div class="container">
-  <div class="small-title" id="typingTitle"></div>
-  <div class="login-box">
-    <h1>LOGIN</h1>
-    <input type="text" id="accessKey" placeholder="ENTER ACCESS KEY" />
-    <button onclick="handleLogin()">LOGIN</button>
-    <button class="secondary" onclick="getKey()">GET KEY</button>
-    <div class="loading" id="loading" style="display:none;">VERIFYING...</div>
-    <div class="error" id="error"></div>
+  <canvas id="particleCanvas" class="particle-bg"></canvas>
+  <div class="container">
+    <div class="title"></div>
+    <div class="login-box">
+      <h1>𝐓𝐇𝐄 𝐋𝐒𝐑 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑 𝐕.4</h1>
+      <input type="text" id="accessKey" placeholder="Enter Access Key" onkeypress="handleKeyPress(event)" aria-label="Access Key Input" />
+      <button onclick="handleLogin()" aria-label="Login Button">Login</button>
+      <button class="secondary" onclick="getKey()" aria-label="Get Access Key">Get New Key</button>
+      <div class="loading" id="loading" style="display:none;">Verifying...</div>
+      <div class="error" id="error"></div>
+      <div class="attempts-warning" id="attemptsWarning">Too many attempts. Try again in <span id="countdown">30</span> seconds.</div>
+    </div>
   </div>
-</div>
+  <div class="modal-overlay" id="modal">
+    <div class="modal-content">
+      <h3 id="modalTitle">Title</h3>
+      <p id="modalMessage">Message</p>
+      <button id="modalCloseBtn" aria-label="Close">Close</button>
+    </div>
+  </div>
 
-<!-- Firebase Script -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-  import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
-  const firebaseConfig = {
-      apiKey: "AIzaSyDmQDemn4U_DS-X0natkfk7JHWcOzxupGo",
-      authDomain: "maalsrworld.firebaseapp.com",
-      projectId: "maalsrworld",
-      storageBucket: "maalsrworld.firebasestorage.app",
-      messagingSenderId: "1054235092352",
-      appId: "1:1054235092352:web:2e0cabd4b54c1853ac0d65",
-      measurementId: "G-54BLS5SHF6"
+    // Firebase config (move to backend for production)
+    const firebaseConfig = {
+  apiKey: "AIzaSyDmQDemn4U_DS-X0natkfk7JHWcOzxupGo",
+  authDomain: "maalsrworld.firebaseapp.com",
+  projectId: "maalsrworld",
+  storageBucket: "maalsrworld.firebasestorage.app",
+  messagingSenderId: "1054235092352",
+  appId: "1:1054235092352:web:2e0cabd4b54c1853ac0d65",
+  measurementId: "G-54BLS5SHF6"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Constants
+    const keyDuration = 24 * 60 * 60 * 1000; // 24 hours
+
+    // Modal functions
+    function showModal(title, message) {
+      const modal = document.getElementById('modal');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalMessage = document.getElementById('modalMessage');
+      const modalCloseBtn = document.getElementById('modalCloseBtn');
+
+      modalTitle.textContent = title;
+      modalMessage.textContent = message;
+      modal.classList.add('active');
+
+      modalCloseBtn.onclick = () => {
+        modal.classList.remove('active');
+      };
+    }
+
+    // Device ID handling (fixed and persistent)
+    function getDeviceId() {
+      let id = localStorage.getItem("device_id") || getDeviceIdFromCookie();
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem("device_id", id);
+        document.cookie = `device_id=${id}; max-age=31536000; path=/; SameSite=Strict`; // 1-year expiration
+      }
+      return id;
+    }
+
+    function getDeviceIdFromCookie() {
+      const cookies = document.cookie.split("; ");
+      for (let cookie of cookies) {
+        const [name, value] = cookie.split("=");
+        if (name === "device_id") return value;
+      }
+      return null;
+    }
+
+    // Lockout mechanism
+    let loginAttempts = parseInt(localStorage.getItem('loginAttempts') || '0');
+    let lastAttemptTime = parseInt(localStorage.getItem('lastAttemptTime') || '0');
+    let isLoggingIn = false;
+    const maxAttempts = 5;
+    const lockoutTime = 30000; // 30 seconds
+
+    function checkIfLockedOut() {
+      const now = Date.now();
+      if (loginAttempts >= maxAttempts && (now - lastAttemptTime) < lockoutTime) {
+        const remainingTime = Math.ceil((lockoutTime - (now - lastAttemptTime)) / 1000);
+        document.getElementById('attemptsWarning').style.display = 'block';
+        document.getElementById('countdown').textContent = remainingTime;
+
+        const countdownInterval = setInterval(() => {
+          const newRemaining = parseInt(document.getElementById('countdown').textContent) - 1;
+          document.getElementById('countdown').textContent = newRemaining;
+
+          if (newRemaining <= 0) {
+            clearInterval(countdownInterval);
+            document.getElementById('attemptsWarning').style.display = 'none';
+            loginAttempts = 0;
+            localStorage.setItem('loginAttempts', '0');
+          }
+        }, 1000);
+        return true;
+      }
+
+      if (loginAttempts >= maxAttempts && (now - lastAttemptTime) >= lockoutTime) {
+        loginAttempts = 0;
+        localStorage.setItem('loginAttempts', '0');
+      }
+      return false;
+    }
+
+    async function tryAutoLogin() {
+      const storedKey = localStorage.getItem("access_key");
+      const deviceId = getDeviceId();
+      const errorDiv = document.getElementById("error");
+      const loadingDiv = document.getElementById("loading");
+
+      if (!storedKey) return;
+
+      loadingDiv.style.display = "block";
+      try {
+        const snap = await get(ref(db, `accessKeys/${storedKey}`));
+        loadingDiv.style.display = "none";
+
+        if (!snap.exists()) {
+          localStorage.removeItem("access_key");
+          errorDiv.innerText = "Stored access key not found.";
+          showModal('Key Not Found', 'Your stored access key is invalid. Please get a new one.');
+          return;
+        }
+
+        const data = snap.val();
+        const now = Date.now();
+
+        if (data.expiry && now > data.expiry) {
+          localStorage.removeItem("access_key");
+          errorDiv.innerText = "Stored access key expired.";
+          showModal('Access Expired', 'Your stored access key has expired. Please get a new one.');
+          return;
+        }
+
+        if (data.deviceId && data.deviceId !== deviceId) {
+          localStorage.removeItem("access_key");
+          errorDiv.innerText = "Key is registered to another device.";
+          showModal('Device Mismatch', 'This key is used on another device. Please get a new key.');
+          return;
+        }
+
+        // Update expiry and last login
+        await update(ref(db, `accessKeys/${storedKey}`), {
+          lastLogin: now,
+          expiry: now + keyDuration
+        });
+
+        showModal('Welcome Back', 'Auto-login successful! Redirecting...', false);
+        setTimeout(() => {
+          window.location.href = "https://devilhackervipseller.github.io/LSR-pvt-World/";
+        }, 1500);
+      } catch (err) {
+        loadingDiv.style.display = "none";
+        localStorage.removeItem("access_key");
+        errorDiv.innerText = `Auto-login failed: ${err.message}`;
+        showModal('Error', 'Failed to auto-login. Please try again or get a new key.');
+      }
+    }
+
+    window.handleLogin = async function () {
+      if (isLoggingIn) return;
+      isLoggingIn = true;
+
+      if (checkIfLockedOut()) {
+        isLoggingIn = false;
+        return;
+      }
+
+      const key = document.getElementById("accessKey").value.trim();
+      const errorDiv = document.getElementById("error");
+      const loadingDiv = document.getElementById("loading");
+      const deviceId = getDeviceId();
+
+      errorDiv.innerText = "";
+      loadingDiv.style.display = "block";
+
+      if (!key) {
+        loadingDiv.style.display = "none";
+        errorDiv.innerText = "Please enter an access key.";
+        isLoggingIn = false;
+        return;
+      }
+
+      try {
+        const snap = await get(ref(db, `accessKeys/${key}`));
+        loadingDiv.style.display = "none";
+
+        if (!snap.exists()) {
+          loginAttempts++;
+          localStorage.setItem('loginAttempts', loginAttempts.toString());
+          localStorage.setItem('lastAttemptTime', Date.now().toString());
+          errorDiv.innerText = "Access key not found.";
+          if (loginAttempts >= maxAttempts) checkIfLockedOut();
+          isLoggingIn = false;
+          return;
+        }
+
+        const data = snap.val();
+        const now = Date.now();
+
+        if (data.expiry && now > data.expiry) {
+          errorDiv.innerText = "Access key expired.";
+          showModal('Key Expired', 'This access key has expired. Please get a new one.');
+          isLoggingIn = false;
+          return;
+        }
+
+        if (data.deviceId && data.deviceId !== deviceId) {
+          errorDiv.innerText = "Key is registered to another device.";
+          showModal('Device Mismatch', 'This key is used on another device. Please get a new key.');
+          isLoggingIn = false;
+          return;
+        }
+
+        // Update deviceId, lastLogin, and expiry
+        await update(ref(db, `accessKeys/${key}`), {
+          deviceId: data.deviceId || deviceId,
+          lastLogin: now,
+          expiry: now + keyDuration
+        });
+
+        loginAttempts = 0;
+        localStorage.setItem('loginAttempts', '0');
+        localStorage.setItem("access_key", key);
+
+        showModal('Success', 'Login successful! Redirecting...');
+        setTimeout(() => {
+          window.location.href = "https://devilhackervipseller.github.io/LSR-pvt-World/";
+        }, 1500);
+      } catch (err) {
+        loadingDiv.style.display = "none";
+        errorDiv.innerText = `Login failed: ${err.message}`;
+        showModal('Error', 'Login failed. Please try again or get a new key.');
+      } finally {
+        isLoggingIn = false;
+      }
     };
 
+    window.getKey = function () {
+      const message = encodeURIComponent("Hello, I need a new access key for LSR Predictor due to device mismatch or expiry.");
+      window.open(`https://t.me/Devil_Hacker_Vip?text=${message}`, '_blank');
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-
-  function getDeviceId() {
-    let id = localStorage.getItem("device_id");
-    if (!id) {
-      id = crypto.randomUUID();
-      localStorage.setItem("device_id", id);
-    }
-    return id;
-  }
-
-  window.handleLogin = async function () {
-    const key = document.getElementById("accessKey").value.trim();
-    const errorDiv = document.getElementById("error");
-    const loadingDiv = document.getElementById("loading");
-    const deviceId = getDeviceId();
-
-    errorDiv.innerText = "";
-    loadingDiv.style.display = "block";
-
-    if (!key) {
-      loadingDiv.style.display = "none";
-      errorDiv.innerText = "PLEASE ENTER ACCESS KEY.";
-      return;
-    }
-
-    try {
-      const snap = await get(ref(db, `accessKeys/${key}`));
-      loadingDiv.style.display = "none";
-
-      if (!snap.exists()) {
-        errorDiv.innerText = "ACCESS KEY NOT FOUND.";
-        return;
+    window.handleKeyPress = function (event) {
+      if (event.key === 'Enter') {
+        handleLogin();
       }
+    };
 
-      const data = snap.val();
-      const now = Date.now();
+    window.onload = function () {
+      tryAutoLogin();
+      checkIfLockedOut();
+    };
+  </script>
 
-      if (data.expiry && now > data.expiry) {
-        errorDiv.innerText = "ACCESS KEY EXPIRED.";
-        return;
-      }
-
-      if (data.deviceId && data.deviceId !== deviceId) {
-        errorDiv.innerText = "THIS KEY IS ALREADY USED ON ANOTHER DEVICE.";
-        return;
-      }
-
-      if (!data.deviceId) {
-        await update(ref(db, `accessKeys/${key}`), {
-          deviceId: deviceId
-        });
-      }
-
-      window.location.href = " https://devilhackervipseller.github.io/LSR-pvt-World/";
-    } catch (err) {
-      loadingDiv.style.display = "none";
-      errorDiv.innerText = "ERROR DURING LOGIN. TRY AGAIN.";
-      console.error(err);
-    }
-  };
-
-  window.getKey = function () {
-    const message = encodeURIComponent("HELLO DEVIL HACKER BROTHER , I NEED AN ACCESS KEY.");
-    window.open(`https://t.me/Devil_Hacker_Vip?text=${message}`, '_blank');
-  };
-</script>
-
-<!-- Starfield Animation -->
-<script>
-  const canvas = document.getElementById("starfieldCanvas");
-  const ctx = canvas.getContext("2d");
-  canvas.height = window.innerHeight;
-  canvas.width = window.innerWidth;
-
-  const stars = [];
-  const starCount = 400;
-
-  class Star {
-    constructor() {
-      this.angle = Math.random() * Math.PI * 2;
-      this.radius = Math.random() * Math.min(canvas.width, canvas.height) * 0.7;
-      this.speed = Math.random() * 0.02 + 0.01;
-      this.size = Math.random() * 4 + 1;
-      this.color = Math.random() > 0.8 ? "#ffffff" : "#00f7ff";
-    }
-    update() {
-      this.angle += this.speed;
-      this.x = canvas.width / 2 + Math.cos(this.angle) * this.radius;
-      this.y = canvas.height / 2 + Math.sin(this.angle) * this.radius;
-    }
-    draw() {
-      ctx.fillStyle = this.color;
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  function initStars() {
-    for (let i = 0; i < starCount; i++) {
-      stars.push(new Star());
-    }
-  }
-
-  function animateStars() {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    stars.forEach(star => {
-      star.update();
-      star.draw();
-    });
-    requestAnimationFrame(animateStars);
-  }
-
-  initStars();
-  animateStars();
-
-  window.addEventListener('resize', () => {
+  <script>
+    const canvas = document.getElementById("particleCanvas");
+    const ctx = canvas.getContext("2d");
     canvas.height = window.innerHeight;
     canvas.width = window.innerWidth;
-    stars.forEach(star => {
-      star.radius = Math.min(star.radius, Math.min(canvas.width, canvas.height) * 0.7);
-    });
-  });
-</script>
 
-<!-- Typing Animation -->
-<script>
-  const text = "𝐖𝐄𝐋𝐂𝐎𝐌𝐄 𝐓𝐎 𝐓𝐇𝐄 𝐋𝐒𝐑 𝐏𝐑𝐄𝐃𝐈𝐂𝐓𝐎𝐑";
-  let index = 0;
-  function type() {
-    if (index < text.length) {
-      document.getElementById("typingTitle").innerHTML += text.charAt(index);
-      index++;
-      setTimeout(type, 100);
+    const particleCount = window.innerWidth < 500 ? 50 : 100;
+    const particles = [];
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 3 + 1;
+        this.speedX = Math.random() * 2 - 1;
+        this.speedY = Math.random() * 2 - 1;
+        this.color = `rgba(0, 234, 255, ${Math.random() * 0.5 + 0.3})`;
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+        if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+      }
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
-  }
-  type();
-</script>
+
+    function initParticles() {
+      for (let i = 0; i < particleCount; i++) {
+        particles.push(new Particle());
+      }
+    }
+
+    function animateParticles() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(particle => {
+        particle.update();
+        particle.draw();
+      });
+      requestAnimationFrame(animateParticles);
+    }
+
+    initParticles();
+    animateParticles();
+
+    window.addEventListener('resize', () => {
+      canvas.height = window.innerHeight;
+      canvas.width = window.innerWidth;
+    });
+  </script>
 </body>
 </html>
